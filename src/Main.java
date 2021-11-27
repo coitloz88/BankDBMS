@@ -7,6 +7,10 @@ import java.util.Scanner;
  * </추가사항>
  */
 
+/**
+ * delete this! ->추후 수정, 삭제해야할 사항
+ */
+
 public class Main {
 
     static Scanner keyboard = null;
@@ -24,14 +28,17 @@ public class Main {
         try {
             Class.forName("com.mysql.jdbc.Driver");
 
-            String DB_URL = "jdbc:mysql://localhost/BankDBMS";
-
+            String DB_URL = "jdbc:mysql://localhost:3306/bankApp?serverTimezone=Asia/Seoul&useSSL=false";
+/*
+            //TODO: id, pw 로그인해서 db에 접속
             System.out.print("Enter ID: ");
             String DB_ID = keyboard.next();
 
             System.out.print("Enter PW: ");
             String DB_PW = keyboard.next();
-
+*/
+            String DB_ID = "root"; //delete this!
+            String DB_PW = "tksxhflsl12#"; //delete this!
             connection = DriverManager.getConnection(DB_URL, DB_ID, DB_PW);
             if (connection == null) {
                 System.err.println(". . . DB 접속 실패");
@@ -50,6 +57,7 @@ public class Main {
         System.out.println("--------Bank Database System--------");
 
         try {
+
             statement = connection.createStatement();
 
             int selectInput = -1;
@@ -68,11 +76,10 @@ public class Main {
 
             }
 
-
             //DB 종료
-            resultSet.close();
-            preparedStatement.close();
-            statement.close();
+            if(resultSet != null) resultSet.close();
+            if(preparedStatement != null) preparedStatement.close();
+            if(statement != null) statement.close();
             if (!connection.isClosed()) connection.close();
         } catch (SQLException throwables) {
             throwables.printStackTrace();
