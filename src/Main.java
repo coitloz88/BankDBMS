@@ -135,12 +135,7 @@ public class Main {
                     adminManageUser();
                     break;
                 case 2:
-                    System.out.println("  1. Administrator 정보 조회");
-                    System.out.println("  2. Administrator 추가");
-                    System.out.println("  3. Administrator 삭제");
-                    System.out.println("  4. Administrator 정보 수정");
-                    System.out.print(" Input: ");
-                    inputOption = keyboard.nextInt();
+                    adminManageAdmin();
                     break;
                 case 3:
                     break;
@@ -164,10 +159,7 @@ public class Main {
         }
     }
 
-    public static void adminRegisterNewPerson(int mode) {
-        //mode = 0: Admin, mode = 1: User
-    }
-
+    //complete
     public static void adminManageUser() throws SQLException {
         int inputOption = -1;
         System.out.println("\n < User 정보 관리 >");
@@ -221,9 +213,8 @@ public class Main {
                 break;
             case 2: //User 추가
                 System.out.println("\n < User 추가 등록 >");
-                boolean flag = false;
                 int inputUserID = 0;
-                while(!flag) {
+                while(true) {
                     System.out.print("  1. User ID(8자리 수) 입력: ");
                     inputUserID = keyboard.nextInt();
 
@@ -282,7 +273,7 @@ public class Main {
                         System.out.println(resultSet.getDate(7));
 
                 } else {
-                    System.out.println(" User추가 실패: 예기치 못한 에러, 이전 메뉴 선택 창으로 돌아갑니다.");
+                    System.out.println(" User 추가 실패: 예기치 못한 에러, 이전 메뉴 선택 창으로 돌아갑니다.");
                 }
 
                 break;
@@ -294,8 +285,10 @@ public class Main {
                 if (resultSet.next()) {
                     try {
                         statement.executeUpdate("DELETE FROM User WHERE UserID = " + inputUserID);
+                        System.out.println(" User 삭제 성공: 이전 메뉴 선택 창으로 돌아갑니다.");
+
                     } catch (SQLException e) {
-                        System.out.println(" User삭제 실패: 이전 메뉴 선택 창으로 돌아갑니다.");
+                        System.out.println(" User 삭제 실패: 이전 메뉴 선택 창으로 돌아갑니다.");
                         break;
                     }
                 } else {
@@ -351,6 +344,214 @@ public class Main {
 
     }
 
+    //complete
+    public static void adminManageAdmin() throws SQLException {
+        int inputOption = -1;
+        System.out.println("\n < Administrator 정보 관리 >");
+        System.out.println("  0. Return to previous menu");
+        System.out.println("  1. Administrator 정보 조회");
+        System.out.println("  2. Administrator 추가");
+        System.out.println("  3. Administrator 삭제");
+        System.out.println("  4. Administrator 정보 수정");
+        System.out.print(" Input: ");
+        inputOption = keyboard.nextInt();
+        switch (inputOption) {
+            case 0:
+                return;
+            case 1:
+                System.out.println("\n < Administrator 정보 조회 >");
+                System.out.println("  1. Administrator ID로 검색하기");
+                System.out.println("  2. 전체 Administrator 조회하기");
+                System.out.print(" Input: ");
+                int inputOption1 = keyboard.nextInt();
+
+                if(inputOption1 == 1){
+                    //단일 user 검색
+                    System.out.print(" 검색할 Administrator ID 입력: ");
+                    int inputAdminID = keyboard.nextInt();
+                    findAdminByID(inputAdminID);
+                    if(resultSet.next()){
+                        System.out.println("AdminID  Name                 phoneNum      Address                        BirthDate  BranchID");
+                        System.out.print(String.format("%08d", resultSet.getInt(1)));
+                        String name = resultSet.getString(2) + " " + resultSet.getString(3);
+                        String address = resultSet.getString(5) + " " + resultSet.getString(6);
+                        System.out.printf(" %-20s %-13s %-30s ", name, resultSet.getString(4), address);
+                        System.out.print(resultSet.getDate(7));
+                        System.out.println(" " + resultSet.getInt(8));
+                    } else {
+                        System.out.println("등록되지 않은 Administrator 입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                    }
+                } else if(inputOption1 == 2) {
+                    //모든 admin 검색
+                    resultSet = statement.executeQuery("SELECT * FROM administrator");
+                    System.out.println("\n----------전체 administrator----------");
+                    System.out.println("AdminID  Name                 phoneNum      Address                        BirthDate  BranchID");
+                    while(resultSet.next()){
+                        System.out.print(String.format("%08d", resultSet.getInt(1)));
+                        String name = resultSet.getString(2) + " " + resultSet.getString(3);
+                        String address = resultSet.getString(5) + " " + resultSet.getString(6);
+                        System.out.printf(" %-20s %-13s %-30s ", name, resultSet.getString(4), address);
+                        System.out.print(resultSet.getDate(7));
+                        System.out.println(" " + resultSet.getInt(8));
+                    }
+                } else {
+                    System.out.println("유효하지 않은 입력입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                }
+                break;
+            case 2: //User 추가
+                System.out.println("\n < Administrator 추가 등록 >");
+                int inputAdminID = 0;
+                while(true) {
+                    System.out.print("  1. Administrator ID(8자리 수) 입력: ");
+                    inputAdminID = keyboard.nextInt();
+
+                    findAdminByID(inputAdminID);
+                    if (resultSet.next()) {
+                        System.out.println("이미 존재하는 ID입니다. 다른 ID를 입력해주십시오.");
+                    } else {
+                        break;
+                    }
+                }
+                System.out.print("  2. 이름(first name) 입력: ");
+                String inputFname = keyboard.next();
+
+                System.out.print("  3. 성(last name) 입력: ");
+                String inputLname = keyboard.next();
+
+                System.out.print("  4. 전화번호(000-0000-0000) 입력: ");
+                String inputphoneNum = keyboard.next();
+
+                System.out.print("  5. 주소(특별시/광역시/도) 입력: ");
+                String inputAd_state = keyboard.next();
+
+                System.out.print("  6. 주소(나머지 주소) 입력: ");
+                String inputAd_details = keyboard.next();
+
+                System.out.print("  7. 생년월일(yyyy-MM-dd) 입력: ");
+                String inputBirthDate = keyboard.next();
+
+                System.out.print("  8. 근무 branch ID(4자리 수) 입력: ");
+                int inputAdminBranchID = keyboard.nextInt();
+
+                try {
+                    preparedStatement = connection.prepareStatement("INSERT INTO administrator(AdminID, Fname, Lname, phoneNum, Ad_state, Ad_details, BirthDate, AdBranchID) values (?,?,?,?,?,?,?,?)");
+                    preparedStatement.setInt(1, inputAdminID);
+                    preparedStatement.setString(2, inputFname);
+                    preparedStatement.setString(3, inputLname);
+                    preparedStatement.setString(4, inputphoneNum);
+                    preparedStatement.setString(5, inputAd_state);
+                    preparedStatement.setString(6, inputAd_details);
+
+                    Date sqlDate = Date.valueOf(inputBirthDate);
+                    preparedStatement.setDate(7, sqlDate);
+                    preparedStatement.setInt(8, inputAdminBranchID);
+
+                    preparedStatement.executeUpdate();
+
+                } catch (SQLException e) {
+                    System.out.println(" Administrator 추가 실패: Invalid input, 이전 메뉴 선택 창으로 돌아갑니다.");
+                    break;
+                }
+
+                findAdminByID(inputAdminID);
+                if(resultSet.next()){
+                    System.out.println(" 다음의 Administrator을 추가하였습니다: ");
+                    System.out.println("AdminID  Name                 phoneNum      Address                        BirthDate  BranchID");
+                    System.out.print(String.format("%08d", resultSet.getInt(1)));
+                    String name = resultSet.getString(2) + " " + resultSet.getString(3);
+                    String address = resultSet.getString(5) + " " + resultSet.getString(6);
+                    System.out.printf(" %-20s %-13s %-30s ", name, resultSet.getString(4), address);
+                    System.out.print(resultSet.getDate(7));
+                    System.out.println(" " + resultSet.getInt(8));
+
+                } else {
+                    System.out.println(" Administrator 추가 실패: 예기치 못한 에러, 이전 메뉴 선택 창으로 돌아갑니다.");
+                }
+
+                break;
+            case 3: //admin 삭제
+                System.out.println("\n < Administrator 삭제 >");
+                System.out.print("  삭제할 Administrator ID(8자리 수) 입력: ");
+                inputAdminID = keyboard.nextInt();
+                findAdminByID(inputAdminID);
+                if (resultSet.next()) {
+                    try {
+                        statement.executeUpdate("DELETE FROM administrator WHERE AdminID = " + inputAdminID);
+                        System.out.println(" Administrator 삭제 성공: 이전 메뉴 선택 창으로 돌아갑니다.");
+                    } catch (SQLException e) {
+                        System.out.println(" Administrator 삭제 실패: 이전 메뉴 선택 창으로 돌아갑니다.");
+                        break;
+                    }
+                } else {
+                    System.out.println(" 존재하지 않는 Admin ID 입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                }
+                break;
+            case 4: //Admin 수정
+                System.out.println("\n < Administrator 정보 수정 >");
+                System.out.print("  수정할 Administrator ID(8자리 수) 입력: ");
+                inputAdminID = keyboard.nextInt();
+                findAdminByID(inputAdminID);
+
+                if (resultSet.next()) {
+                    try {
+                        System.out.print("  1. 이름(first name) 입력: ");
+                        inputFname = keyboard.next();
+
+                        System.out.print("  2. 성(last name) 입력: ");
+                        inputLname = keyboard.next();
+
+                        System.out.print("  3. 전화번호(000-0000-0000) 입력: ");
+                        inputphoneNum = keyboard.next();
+
+                        System.out.print("  4. 주소(특별시/광역시/도) 입력: ");
+                        inputAd_state = keyboard.next();
+
+                        System.out.print("  5. 주소(나머지 주소) 입력: ");
+                        inputAd_details = keyboard.next();
+
+                        System.out.print("  6. 근무 branch ID(4자리 수) 입력: ");
+                        inputAdminBranchID = keyboard.nextInt();
+
+                        if(!isManagerUpdatePossible(inputAdminID, inputAdminBranchID)){
+                            System.out.println(" Administrator 정보 수정 실패(Manager의 근무 branch는 변경 불가): 이전 메뉴 선택 창으로 돌아갑니다.");
+                            break;
+                        }
+
+                        preparedStatement = connection.prepareStatement("UPDATE administrator SET Fname = ?, Lname = ?, phoneNum = ?, Ad_state = ?, Ad_details = ?, AdBranchID = ? WHERE AdminID = ?");
+                        preparedStatement.setString(1, inputFname);
+                        preparedStatement.setString(2, inputLname);
+                        preparedStatement.setString(3, inputphoneNum);
+                        preparedStatement.setString(4, inputAd_state);
+                        preparedStatement.setString(5, inputAd_details);
+                        preparedStatement.setInt(6, inputAdminBranchID);
+                        preparedStatement.setInt(7, inputAdminID);
+
+                        preparedStatement.executeUpdate();
+
+                        System.out.println(" Administrator 정보 수정을 완료하였습니다.");
+                    } catch (SQLException e) {
+                        //e.printStackTrace();
+                        System.out.println(" Administrator 정보 수정 실패: 이전 메뉴 선택 창으로 돌아갑니다.");
+                        break;
+                    }
+                } else {
+                    System.out.println(" 존재하지 않는 Administrator ID 입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                }
+                break;
+            default:
+                System.out.println("유효하지 않은 입력입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                break;
+        }
+
+    }
+
+    public static boolean isManagerUpdatePossible(int AdminID, int newBranchID) throws SQLException {
+        resultSet = statement.executeQuery("SELECT BranchID FROM bankbranch WHERE ManagerID = " + AdminID);
+
+        if(resultSet.next() && resultSet.getInt(1) != newBranchID){ //해당 admin은 manager && 새로운 branch에 파견됨(불가능)
+            return false;
+        } else return true;
+    }
 
     public static void userMainMenu() {
         int inputOption = -1;
@@ -397,7 +598,12 @@ public class Main {
     }
 
     public static void findUserByID(int inputUserID) throws SQLException {
-        resultSet = statement.executeQuery("SELECT UserID, Fname, Lname, phoneNum, Ad_state, Ad_details, BirthDate FROM User WHERE UserID = " + inputUserID);
+        resultSet = statement.executeQuery("SELECT UserID, Fname, Lname, phoneNum, Ad_state, Ad_details, BirthDate FROM user WHERE UserID = " + inputUserID);
+    }
+
+    public static void findAdminByID(int inputAdminID) throws SQLException {
+        resultSet = statement.executeQuery("SELECT AdminID, Fname, Lname, phoneNum, Ad_state, Ad_details, BirthDate, AdBranchID FROM administrator WHERE AdminID = " + inputAdminID);
+        //resultSet = statement.executeQuery("SELECT * FROM administarator WHERE AdminID = " + inputAdminID);
     }
 
     public static void findAccountByID(String inputAccountID) throws SQLException {
