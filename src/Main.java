@@ -193,28 +193,116 @@ public class Main {
                     System.out.print(" 검색할 User ID 입력: ");
                     int inputUserID = keyboard.nextInt();
                     findUserByID(inputUserID);
-
+                    if(resultSet.next()){
+                        System.out.println("UserID   Name                 phoneNum      Address                        BirthDate");
+                        System.out.print(String.format("%08d", resultSet.getInt(1)));
+                        String name = resultSet.getString(2) + " " + resultSet.getString(3);
+                        String address = resultSet.getString(5) + " " + resultSet.getString(6);
+                        System.out.printf(" %-20s %-13s %-30s ", name, resultSet.getString(4), address);
+                        System.out.println(resultSet.getDate(7));
+                    } else {
+                        System.out.println("등록되지 않은 User 입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                    }
                 } else if(inputOption1 == 2) {
                     //모든 user 검색
                     resultSet = statement.executeQuery("SELECT UserID, Fname, Lname, phoneNum, Ad_state, Ad_details, BirthDate FROM User");
                     System.out.println("\n--------------전체 user--------------");
-                    System.out.println("UserID       Name               phoneNum          Address                   BirthDate");
-                    while(!resultSet.next()){
+                    System.out.println("UserID   Name                 phoneNum      Address                        BirthDate");
+                    while(resultSet.next()){
                         System.out.print(String.format("%08d", resultSet.getInt(1)));
                         String name = resultSet.getString(2) + " " + resultSet.getString(3);
                         String address = resultSet.getString(5) + " " + resultSet.getString(6);
-                        System.out.printf(" %20s %13s %30s ", name, resultSet.getString(4), address);
+                        System.out.printf(" %-20s %-13s %-30s ", name, resultSet.getString(4), address);
                         System.out.println(resultSet.getDate(7));
                     }
                 } else {
                     System.out.println("유효하지 않은 입력입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
                 }
                 break;
-            case 2:
+            case 2: //User 추가
+                System.out.println("\n < User 추가 등록 >");
+                boolean flag = false;
+                int inputUserID = 0;
+                while(!flag) {
+                    System.out.print("  1. User ID(8자리 수) 입력: ");
+                    inputUserID = keyboard.nextInt();
+
+                    findUserByID(inputUserID);
+                    if (resultSet.next()) {
+                        System.out.println("이미 존재하는 ID입니다. 다른 ID를 입력해주십시오.");
+                    } else {
+                        break;
+                    }
+                }
+                System.out.print("  2. 이름(first name) 입력: ");
+                String inputFname = keyboard.next();
+
+                System.out.print("  3. 성(last name) 입력: ");
+                String inputLname = keyboard.next();
+
+                System.out.print("  4. 전화번호(000-0000-0000) 입력: ");
+                String inputphoneNum = keyboard.next();
+
+                System.out.print("  5. 주소(특별시/광역시/도) 입력: ");
+                String inputAd_state = keyboard.next();
+
+                System.out.print("  6. 주소(나머지 주소) 입력: ");
+                String inputAd_details = keyboard.next();
+
+                System.out.print("  7. 생년월일(yyyy-MM-dd) 입력: ");
+                String inputBirthDate = keyboard.next();
+
+                try {
+                    preparedStatement = connection.prepareStatement("INSERT INTO User(UserID, Fname, Lname, phoneNum, Ad_state, Ad_details, BirthDate) values (?,?,?,?,?,?,?)");
+                    preparedStatement.setInt(1, inputUserID);
+                    preparedStatement.setString(2, inputFname);
+                    preparedStatement.setString(3, inputLname);
+                    preparedStatement.setString(4, inputphoneNum);
+                    preparedStatement.setString(5, inputAd_state);
+                    preparedStatement.setString(6, inputAd_details);
+
+                    Date sqlDate = Date.valueOf(inputBirthDate);
+                    preparedStatement.setDate(7, sqlDate);
+
+                    preparedStatement.executeUpdate();
+
+                } catch (SQLException e) {
+                    System.out.println(" User추가 실패: Invalid input, 이전 메뉴 선택 창으로 돌아갑니다.");
+                    break;
+                }
+
+                findUserByID(inputUserID);
+                if(resultSet.next()){
+                    System.out.println(" 다음의 User을 추가하였습니다: ");
+                        System.out.println("UserID   Name                 phoneNum      Address                        BirthDate");
+                        System.out.print(String.format("%08d", resultSet.getInt(1)));
+                        String name = resultSet.getString(2) + " " + resultSet.getString(3);
+                        String address = resultSet.getString(5) + " " + resultSet.getString(6);
+                        System.out.printf(" %-20s %-13s %-30s ", name, resultSet.getString(4), address);
+                        System.out.println(resultSet.getDate(7));
+
+                } else {
+                    System.out.println(" User추가 실패: 예기치 못한 에러, 이전 메뉴 선택 창으로 돌아갑니다.");
+                }
+
                 break;
-            case 3:
+            case 3: //User 삭제
+                System.out.println("\n < User 삭제 >");
+                System.out.print("  삭제할 User ID(8자리 수) 입력: ");
+                inputUserID = keyboard.nextInt();
+                findUserByID(inputUserID);
+                if (resultSet.next()) {
+                    try {
+                        statement.executeUpdate("DELETE FROM User WHERE UserID = " + inputUserID);
+                    } catch (SQLException e) {
+                        System.out.println(" User삭제 실패: 이전 메뉴 선택 창으로 돌아갑니다.");
+                        break;
+                    }
+                } else {
+                    System.out.println(" 존재하지 않는 User ID 입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                }
                 break;
-            case 4:
+            case 4: //User 수정
                 break;
             default:
                 System.out.println("유효하지 않은 입력입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
