@@ -303,6 +303,46 @@ public class Main {
                 }
                 break;
             case 4: //User 수정
+                System.out.println("\n < User 정보 수정 >");
+                System.out.print("  수정할 User ID(8자리 수) 입력: ");
+                inputUserID = keyboard.nextInt();
+                findUserByID(inputUserID);
+
+                if (resultSet.next()) {
+                    try {
+                        System.out.print("  1. 이름(first name) 입력: ");
+                        inputFname = keyboard.next();
+
+                        System.out.print("  2. 성(last name) 입력: ");
+                        inputLname = keyboard.next();
+
+                        System.out.print("  3. 전화번호(000-0000-0000) 입력: ");
+                        inputphoneNum = keyboard.next();
+
+                        System.out.print("  4. 주소(특별시/광역시/도) 입력: ");
+                        inputAd_state = keyboard.next();
+
+                        System.out.print("  5. 주소(나머지 주소) 입력: ");
+                        inputAd_details = keyboard.next();
+
+                        preparedStatement = connection.prepareStatement("UPDATE User SET Fname = ?, Lname = ?, phoneNum = ?, Ad_state = ?, Ad_details = ? WHERE UserID = ?");
+                        preparedStatement.setString(1, inputFname);
+                        preparedStatement.setString(2, inputLname);
+                        preparedStatement.setString(3, inputphoneNum);
+                        preparedStatement.setString(4, inputAd_state);
+                        preparedStatement.setString(5, inputAd_details);
+                        preparedStatement.setInt(6, inputUserID);
+
+                        preparedStatement.executeUpdate();
+
+                        System.out.println(" User 정보 수정을 완료하였습니다.");
+                    } catch (SQLException e) {
+                        System.out.println(" User 정보 수정 실패: 이전 메뉴 선택 창으로 돌아갑니다.");
+                        break;
+                    }
+                } else {
+                    System.out.println(" 존재하지 않는 User ID 입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                }
                 break;
             default:
                 System.out.println("유효하지 않은 입력입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
