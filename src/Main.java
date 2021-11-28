@@ -59,7 +59,7 @@ public class Main {
         try {
 
             statement = connection.createStatement();
-/*
+
             int selectInput = -1;
 
             //가장 외부 menu 선택 화면에서 종료를 입력할때까지 계속해서 실행됨
@@ -70,33 +70,15 @@ public class Main {
                     adminMainMenu();
                 } else if (selectInput == 2) {
                     userMainMenu();
+                } else if (selectInput == 0) {
+
                 } else {
                     System.out.println("잘못된 입력입니다.");
                 }
 
             }
-*/
-            System.out.print("User ID 입력(8자리 수): ");
-            int inputUserID = keyboard.nextInt();
-            System.out.println("입력된 userID: " + inputUserID);
-            if(findUserByID(inputUserID) == -1){
-                System.out.println("없는 사용자입니다.");
-            } else {
-                do {
-                    System.out.println(resultSet.getInt(1) + ", " + resultSet.getString(2) + " " + resultSet.getString(3));
-                } while(resultSet.next());
-            }
 
-            System.out.print("\nAccount ID 입력: ");
-            String inputAccountID = keyboard.next();
-            System.out.println("입력된 accountID: " + inputAccountID);
-            if(findAccountByID(inputAccountID).equals("-1")){
-                System.out.println("없는 계좌입니다.");
-            } else {
-                do{
-                    System.out.println(resultSet.getString(1) + ", " + resultSet.getInt(2));
-                }while(resultSet.next());
-            }
+
             //DB 종료
             if(resultSet != null) resultSet.close();
             if(preparedStatement != null) preparedStatement.close();
@@ -129,7 +111,7 @@ public class Main {
     adminMainMenu, userMainMenu에서는 해당 함수 내에서 input에 따라 다른 함수 호출등의 action을 취함
      */
 
-    public static void adminMainMenu() {
+    public static void adminMainMenu() throws SQLException {
         int inputOption = -1;
         while (inputOption != 0) {
             System.out.println("\n------------ADMIN MODE-------------");
@@ -150,12 +132,7 @@ public class Main {
                 case 0:
                     return;
                 case 1:
-                    System.out.println("  1. User 정보 조회");
-                    System.out.println("  2. User 추가");
-                    System.out.println("  3. User 삭제");
-                    System.out.println("  4. User 정보 수정");
-                    System.out.print(" Input: ");
-                    inputOption = keyboard.nextInt();
+                    adminManageUser();
                     break;
                 case 2:
                     System.out.println("  1. Administrator 정보 조회");
@@ -189,6 +166,61 @@ public class Main {
 
     public static void adminRegisterNewPerson(int mode) {
         //mode = 0: Admin, mode = 1: User
+    }
+
+    public static void adminManageUser() throws SQLException {
+        int inputOption = -1;
+        System.out.println("\n < User 정보 관리 >");
+        System.out.println("  0. Return to previous menu");
+        System.out.println("  1. User 정보 조회");
+        System.out.println("  2. User 추가");
+        System.out.println("  3. User 삭제");
+        System.out.println("  4. User 정보 수정");
+        System.out.print(" Input: ");
+        inputOption = keyboard.nextInt();
+        switch (inputOption) {
+            case 0:
+                return;
+            case 1:
+                System.out.println("\n < User 정보 조회 >");
+                System.out.println("  1. User ID로 검색하기");
+                System.out.println("  2. 전체 User 조회하기");
+                System.out.print(" Input: ");
+                int inputOption1 = keyboard.nextInt();
+
+                if(inputOption1 == 1){
+                    //단일 user 검색
+                    System.out.print(" 검색할 User ID 입력: ");
+                    int inputUserID = keyboard.nextInt();
+                    findUserByID(inputUserID);
+
+                } else if(inputOption1 == 2) {
+                    //모든 user 검색
+                    resultSet = statement.executeQuery("SELECT UserID, Fname, Lname, phoneNum, Ad_state, Ad_details, BirthDate FROM User");
+                    System.out.println("\n--------------전체 user--------------");
+                    System.out.println("UserID       Name               phoneNum          Address                   BirthDate");
+                    while(!resultSet.next()){
+                        System.out.print(String.format("%08d", resultSet.getInt(1)));
+                        String name = resultSet.getString(2) + " " + resultSet.getString(3);
+                        String address = resultSet.getString(5) + " " + resultSet.getString(6);
+                        System.out.printf(" %20s %13s %30s ", name, resultSet.getString(4), address);
+                        System.out.println(resultSet.getDate(7));
+                    }
+                } else {
+                    System.out.println("유효하지 않은 입력입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                }
+                break;
+            case 2:
+                break;
+            case 3:
+                break;
+            case 4:
+                break;
+            default:
+                System.out.println("유효하지 않은 입력입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                break;
+        }
+
     }
 
 
@@ -236,20 +268,14 @@ public class Main {
         }
     }
 
-    public static int findUserByID(int inputUserID) throws SQLException {
-        resultSet = statement.executeQuery("SELECT UserID, Fname, Lname FROM User WHERE UserID = " + inputUserID);
-
-        if(!resultSet.next()) return -1;
-        else return inputUserID;
+    public static void findUserByID(int inputUserID) throws SQLException {
+        resultSet = statement.executeQuery("SELECT UserID, Fname, Lname, phoneNum, Ad_state, Ad_details, BirthDate FROM User WHERE UserID = " + inputUserID);
     }
 
-    public static String findAccountByID(String inputAccountID) throws SQLException {
+    public static void findAccountByID(String inputAccountID) throws SQLException {
         preparedStatement = connection.prepareStatement("SELECT AccountID, Balance FROM Account WHERE AccountID = ?");
         preparedStatement.setString(1, inputAccountID);
         resultSet = preparedStatement.executeQuery();
-
-        if(!resultSet.next()) return "-1";
-        else return inputAccountID;
     }
 
     public static void userDeposit() {
