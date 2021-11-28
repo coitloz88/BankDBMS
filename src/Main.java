@@ -59,7 +59,7 @@ public class Main {
         try {
 
             statement = connection.createStatement();
-
+/*
             int selectInput = -1;
 
             //가장 외부 menu 선택 화면에서 종료를 입력할때까지 계속해서 실행됨
@@ -75,7 +75,28 @@ public class Main {
                 }
 
             }
+*/
+            System.out.print("User ID 입력(8자리 수): ");
+            int inputUserID = keyboard.nextInt();
+            System.out.println("입력된 userID: " + inputUserID);
+            if(findUserByID(inputUserID) == -1){
+                System.out.println("없는 사용자입니다.");
+            } else {
+                do {
+                    System.out.println(resultSet.getInt(1) + ", " + resultSet.getString(2) + " " + resultSet.getString(3));
+                } while(resultSet.next());
+            }
 
+            System.out.print("\nAccount ID 입력: ");
+            String inputAccountID = keyboard.next();
+            System.out.println("입력된 accountID: " + inputAccountID);
+            if(findAccountByID(inputAccountID).equals("-1")){
+                System.out.println("없는 계좌입니다.");
+            } else {
+                do{
+                    System.out.println(resultSet.getString(1) + ", " + resultSet.getInt(2));
+                }while(resultSet.next());
+            }
             //DB 종료
             if(resultSet != null) resultSet.close();
             if(preparedStatement != null) preparedStatement.close();
@@ -215,21 +236,20 @@ public class Main {
         }
     }
 
-    public static int findUserByID() throws SQLException {
-        System.out.print("User ID 입력(8자리 수): ");
-        int inputUserID = keyboard.nextInt();
+    public static int findUserByID(int inputUserID) throws SQLException {
         resultSet = statement.executeQuery("SELECT UserID, Fname, Lname FROM User WHERE UserID = " + inputUserID);
 
         if(!resultSet.next()) return -1;
         else return inputUserID;
     }
 
-    public static int findAccountByID() throws SQLException {
-        System.out.print("User ID 입력(8자리 수): ");
-        int inputUserID = keyboard.nextInt();
+    public static String findAccountByID(String inputAccountID) throws SQLException {
+        preparedStatement = connection.prepareStatement("SELECT AccountID, Balance FROM Account WHERE AccountID = ?");
+        preparedStatement.setString(1, inputAccountID);
+        resultSet = preparedStatement.executeQuery();
 
-
-        return inputUserID;
+        if(!resultSet.next()) return "-1";
+        else return inputAccountID;
     }
 
     public static void userDeposit() {
