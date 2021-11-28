@@ -126,6 +126,12 @@ public class Main {
         resultSet = statement.executeQuery("SELECT AccountID, Balance, isMinus, AcAdminID, AcUserID, StartDate FROM account WHERE AcUserID = " + inputUserID);
     }
 
+    public static void findTransactionByAccountID(String inputAccountID) throws SQLException{
+        preparedStatement = connection.prepareStatement("SELECT acTimeStamp, acType, amount, TBranchID, TUserID FROM actransaction WHERE TAccountID = ? ORDER BY acTimeStamp");
+        preparedStatement.setString(1, inputAccountID);
+        resultSet = preparedStatement.executeQuery();
+    }
+
     public static void adminMainMenu() throws SQLException { //TODO: 4, 5
         int inputOption = -1;
         while (inputOption != 0) {
@@ -635,7 +641,46 @@ public class Main {
  *  1-3. (optional) 기간 별?
  */
 
-        System.out.println("");
+        System.out.println("\n < 거래 내역 조회 >");
+        System.out.println("  0. Return to previous menu");
+        System.out.println("  1. 계좌 번호(Account ID)로 검색하기");
+        System.out.println("  2. User ID로 검색하기");
+        System.out.println("  3. 전체 계좌 조회하기");
+        System.out.print(" Input: ");
+        int inputOption = keyboard.nextInt();
+
+        switch (inputOption){
+            case 0:
+                return;
+            case 1: //단일 Account의 거래 내역 검색
+                System.out.print(" 거래 내역을 검색할 Account ID(000-0000-0000) 입력: ");
+                String inputAccountID = keyboard.next();
+                findTransactionByAccountID(inputAccountID);
+
+                if(resultSet.next()){ //account 존재
+                    System.out.println("TimeStamp           Type Amount      BranchID");
+                    do{
+                        String type = resultSet.getInt(2) == 1 ? "입금" : "출금";
+                        System.out.print(resultSet.getDate(1) + " " + type);
+                        System.out.printf("  %-10d", resultSet.getInt(3));
+                        System.out.println(String.format("%08d", resultSet.getInt(4)));
+                    }while(resultSet.next());
+
+                } else {
+                    System.out.println("Account가 존재하지 않습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                }
+                break;
+            case 2: //user ID로 검색
+
+                break;
+            case 3: //전체 조회
+
+                break;
+            default:
+                System.out.println("유효하지 않은 입력입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                break;
+
+        }
     }
 
 
