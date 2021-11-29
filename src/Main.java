@@ -210,14 +210,8 @@ public class Main {
                 case 4:
                     adminShowTransaction(); //TODO
                     break;
-                case 5:
-                    System.out.println("  1. 은행 소유 금액 조회"); //account의 모든 balance의 합
-                    System.out.println("  2. 지점 조회"); //전체 지점만 조회가능
-                    System.out.println("  3. 지점 추가");
-                    System.out.println("  4. 지점 삭제");
-                    System.out.println("  5. 지점 정보 수정");
-                    System.out.print(" Input: ");
-                    inputOption = keyboard.nextInt();
+                case 5: //TODO
+                    adminManageBank();
                     break;
                 default:
                     System.out.println("잘못된 입력입니다.");
@@ -688,7 +682,7 @@ public class Main {
         }
     }
 
-    //TODO: 계좌 입출금 내역 확인
+    //TODO: 계좌 입출금 내역 확인(userID)
     public static void adminShowTransaction() {
 /**
  * 1. 특정 계좌번호의 계좌 입출금 내역
@@ -784,6 +778,171 @@ try{
     }
     }
 
+    //TODO
+    public static void adminManageBank() {
+        try {
+            System.out.println("  1. 은행 소유 금액 조회"); //account의 모든 balance의 합
+            System.out.println("  2. 전체 지점 조회"); //전체 지점만 조회가능
+            System.out.println("  3. 지점 추가");
+            System.out.println("  4. 지점 삭제");
+            System.out.println("  5. 지점 정보 수정");
+            System.out.print(" Input: ");
+            int inputOption = keyboard.nextInt();
+
+            switch (inputOption) {
+                case 0:
+                    return;
+                case 1: //은행이 가진 총 돈
+                    System.out.println("\n <은행 소유 금액 조회>");
+                    resultSet = statement.executeQuery("SELECT SUM(Balance) FROM account");
+                    if(resultSet.next()){
+                        System.out.print("  전체 금액: ");
+                        System.out.println(resultSet.getLong(1));
+                    } else {
+                        System.out.println("  현재 은행에 유효한 계좌가 존재하지 않습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                    }
+                    break;
+                case 2: //전체 지점 조회
+                    System.out.println("\n <은행 지점 전체 조회> ");
+                    showBranches(-1);
+                    break;
+                case 3: //지점 추가
+                /*
+                새로운 branch정보를 받고, manager의 경우 기존 직원 중 선택하게 함.
+                만약 이미 매니저인 직원이 선택되었다면 다른 manager을 선택하게 함.(굳이? 한명이 여러 지점을 맡는 건?) -> 근데 이미 모든 직원이 manager로 참가하고 있을 경우(total branch수 = 직원 수) 추가가 불가능하므로 quit 옵션
+                 */
+                    System.out.println("\n <은행 지점 추가>");
+                    int inputBankBranchID;
+                    while(true) {
+                        System.out.print("  1. 추가할 Bank Branch ID(4자리 수) 입력: ");
+                        inputBankBranchID = keyboard.nextInt();
+
+                        findBranchByID(inputBankBranchID);
+
+                        if (resultSet.next()) {
+                            System.out.println(" 이미 존재하는 ID입니다. 다른 ID를 입력해주십시오.");
+                        } else {
+                            break;
+                        }
+                    }
+
+                    System.out.print("  2. 주소(특별시/광역시/도) 입력: ");
+                    String inputLo_state = keyboard.next();
+
+                    System.out.print("  3. 주소(나머지 주소) 입력: ");
+                    String inputLo_details = keyboard.next();
+
+                    int inputManagerID;
+                    while(true) {
+                        System.out.print("  4. Manager ID(8자리 수) 입력: ");
+                        inputManagerID = keyboard.nextInt();
+                        resultSet = statement.executeQuery("SELECT BranchID FROM bankbranch WHERE ManagerID = " + inputManagerID);
+                        if (resultSet.next()) {
+                            System.out.print(" 해당 Administrator는 이미 다른 지점의 Manager을 맡고 있습니다. Branch 등록을 계속 하시려면 1, 등록을 취소하고 이전 메뉴로 돌아가시려면 0을 입력해주세요: ");
+                            int tmpOption = keyboard.nextInt();
+                            if(tmpOption == 0){
+                                return;
+                            }
+                        } else {
+                            findAdminByID(inputManagerID);
+                            if(resultSet.next()) {
+                                break;
+                            } else {
+                                System.out.println(" 존재하지 않는 Administrator ID입니다.");
+                            }
+                        }
+                    }
+                    try {
+                        preparedStatement = connection.prepareStatement("INSERT INTO bankBranch(BranchID, Lo_State, Lo_details, ManagerID) values (?,?,?,?)");
+                        preparedStatement.setInt(1, inputBankBranchID);
+                        preparedStatement.setString(2, inputLo_state);
+                        preparedStatement.setString(3, inputLo_details);
+                        preparedStatement.setInt(4, inputManagerID);
+                        preparedStatement.executeUpdate();
+                        System.out.println(" Bank Branch 추가 완료, ID: " + inputBankBranchID);
+                    } catch (SQLException e) {
+                        System.out.println(" Bank Branch 추가 실패: Invalid input, 이전 메뉴 선택 창으로 돌아갑니다..");
+                    }
+
+                    break;
+                case 4: //지점 삭제
+                    System.out.println("\n <은행 지점 삭제>");
+
+                    System.out.print("  삭제할 Bank Branch ID(4자리 수) 입력: ");
+                    inputBankBranchID = keyboard.nextInt();
+
+                    findBranchByID(inputBankBranchID);
+
+                    if (resultSet.next()) {
+                        try {
+                            statement.executeUpdate("DELETE FROM bankBranch WHERE BranchID = " + inputBankBranchID);
+                            System.out.println(" Bank Branch 삭제 성공: 이전 메뉴 선택 창으로 돌아갑니다.");
+
+                        } catch (SQLException e) {
+                            System.out.println(" Bank Branch 삭제 실패: 이전 메뉴 선택 창으로 돌아갑니다.");
+                        }
+                    } else {
+                        System.out.println(" 존재하지 않는 Bank Branch ID 입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                    }
+                    break;
+                case 5: //지점 정보 수정
+                    System.out.println("\n <은행 지점 정보 수정>");
+
+                    System.out.print("  수정할 Bank Branch ID(4자리 수) 입력: ");
+                    inputBankBranchID = keyboard.nextInt();
+
+                    findBranchByID(inputBankBranchID);
+
+                    if (resultSet.next()) {
+
+                        System.out.print("  1. 주소(특별시/광역시/도) 입력: ");
+                        inputLo_state = keyboard.next();
+
+                        System.out.print("  2. 주소(나머지 주소) 입력: ");
+                        inputLo_details = keyboard.next();
+
+                        while(true) {
+                            System.out.print("  3. Manager ID(8자리 수) 입력: ");
+                            inputManagerID = keyboard.nextInt();
+                            resultSet = statement.executeQuery("SELECT BranchID FROM bankbranch WHERE ManagerID = " + inputManagerID);
+                            if (resultSet.next()) {
+                                System.out.print(" 해당 Administrator는 이미 다른 지점의 Manager을 맡고 있습니다. Branch 등록을 계속 하시려면 1, 수정을 취소하고 이전 메뉴로 돌아가시려면 0을 입력해주세요: ");
+                                int tmpOption = keyboard.nextInt();
+                                if(tmpOption == 0){
+                                    return;
+                                }
+                            } else {
+                                findAdminByID(inputManagerID);
+                                if(resultSet.next()) {
+                                    break;
+                                } else {
+                                    System.out.println(" 존재하지 않는 Administrator ID입니다.");
+                                }
+                            }
+                        }
+                        try {
+                            preparedStatement = connection.prepareStatement("UPDATE bankBranch SET Lo_state = ?, Lo_details = ?, ManagerID = ? WHERE BranchID = " + inputBankBranchID);
+                            preparedStatement.setString(1, inputLo_state);
+                            preparedStatement.setString(2, inputLo_details);
+                            preparedStatement.setInt(3, inputManagerID);
+                            preparedStatement.executeUpdate();
+                            System.out.println(" Bank Branch 정보 수정 완료");
+                        } catch (SQLException e) {
+                            System.out.println(" Bank Branch 정보 수정 실패: Invalid input, 이전 메뉴 선택 창으로 돌아갑니다..");
+                        }
+                    } else {
+                        System.out.println(" 존재하지 않는 Bank Branch ID 입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                    }
+                    break;
+                default:
+                    System.out.println("유효하지 않은 입력입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                    break;
+            }
+        } catch (SQLException e) {
+            System.out.println("DB Error: 이전 이전 메뉴 선택 창으로 돌아갑니다.");
+        }
+    }
+
     public static void userMainMenu(){
         int inputOption = -1;
         while (inputOption != 0) {
@@ -828,7 +987,7 @@ try{
         }
     }
 
-
+    //complete
     public static void userDeposit(){
         try {
             System.out.print("입금할 계좌 번호 입력(000-0000-0000): ");
@@ -841,7 +1000,7 @@ try{
                 int inputBalance = keyboard.nextInt();
 
                 //계좌 입금 기록 기록하기
-                preparedStatement = connection.prepareStatement("INSERT INTO actransaction(acTimeStamp, acType, amount, TBranchID, TACcountID) values(now(), 1, ?, ?, ?)");
+                preparedStatement = connection.prepareStatement("INSERT INTO actransaction(acTimeStamp, acType, amount, TBranchID, TACcountID) values(CURRENT_TIMESTAMP, 1, ?, ?, ?)");
                 preparedStatement.setInt(1, inputBalance);
                 preparedStatement.setInt(2, currentBranchID);
                 preparedStatement.setString(3, inputAccountID);
@@ -854,16 +1013,20 @@ try{
                 preparedStatement.executeUpdate();
 
                 findAccountByAccountID(inputAccountID);
-                System.out.println(" 현재 계좌 잔액: " + resultSet.getInt(2));
 
+                if (resultSet.next()) {
+                    System.out.println(" 현재 계좌 잔액: " + resultSet.getInt(2));
+                }
             } else {
                 System.out.println(" 존재하지 않는 계좌 번호 입니다.");
             }
         } catch (SQLException e) {
+            e.printStackTrace();
             System.out.println("DB Error: 이전 이전 메뉴 선택 창으로 돌아갑니다.");
         }
     }
 
+    //complete
     public static void userWithdraw() {
         try {
             System.out.print("출금할 계좌 번호 입력(000-0000-0000): ");
@@ -890,7 +1053,7 @@ try{
                     }
 
                     //계좌 입금 기록 기록하기
-                    preparedStatement = connection.prepareStatement("INSERT INTO actransaction(acTimeStamp, acType, amount, TBranchID, TACcountID) values(now(), -1, ?, ?, ?)");
+                    preparedStatement = connection.prepareStatement("INSERT INTO actransaction(acTimeStamp, acType, amount, TBranchID, TACcountID) values(CURRENT_TIMESTAMP , -1, ?, ?, ?)");
                     preparedStatement.setInt(1, inputBalance);
                     preparedStatement.setInt(2, currentBranchID);
                     preparedStatement.setString(3, inputAccountID);
@@ -902,23 +1065,29 @@ try{
                     preparedStatement.setString(2, inputAccountID);
                     preparedStatement.executeUpdate();
 
+
                     findAccountByAccountID(inputAccountID);
-                    System.out.println(" 현재 계좌 잔액: " + resultSet.getInt(2));
+                    if (resultSet.next()) {
+                        System.out.println(" 현재 계좌 잔액: " + resultSet.getInt(2));
+                    }
+                } else {
+                    System.out.println(" 비밀번호가 일치하지 않습니다.");
                 }
             } else {
                 System.out.println(" 존재하지 않는 계좌 번호 입니다.");
             }
         } catch (SQLException e) {
+            e.printStackTrace();
             System.out.println("DB Error: 이전 이전 메뉴 선택 창으로 돌아갑니다.");
         }
     }
 
     public static void userNewAccount(){
-
+        //TODO
     }
 
     public static void userDeleteAccount(){
-
+        //TODO
     }
 
 }
