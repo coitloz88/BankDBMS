@@ -29,7 +29,7 @@ public class Main {
 
         //jdbc driver 연결
         try {
-            Class.forName("com.mysql.jdbc.Driver");
+            Class.forName("com.mysql.cj.jdbc.Driver");
 
             String DB_URL = "jdbc:mysql://localhost:3306/bankApp?serverTimezone=Asia/Seoul&useSSL=false";
 /*
@@ -1145,7 +1145,7 @@ public class Main {
     public static void userMakeNewAccount() {
 
         try {
-            if( statement.executeQuery("SELECT count(*) FROM account").getLong(1) >= (long) Math.pow(10, 11)){
+            if( statement.executeQuery("SELECT count(*) FROM account").getLong(1) >= ((long) Math.pow(10, 11)) - 1){
                 System.out.println("DB 용량 초과: 이전 메뉴 선택 창으로 돌아갑니다.");
                 return;
             }
@@ -1242,6 +1242,33 @@ public class Main {
             if ((currentUserID = userLoginByID()) == -1) {
                 return;
             }
+
+            resultSet = statement.executeQuery("SELECT (*) FROM account WHERE AcUserID = " + currentUserID);
+
+            if(resultSet.next()) {
+
+                System.out.println("\n <내 계좌 삭제>");
+                System.out.println("  현재 소유한 계좌는 다음과 같습니다.");
+                System.out.println("AccountID     Balance      Overdraft AdminID  OwnerID  OpeningDate");
+                do {
+                    System.out.printf("%-13s %-12d %-9d ", resultSet.getString(1), resultSet.getInt(2), resultSet.getInt(3));
+                    System.out.println(String.format("%08d", resultSet.getInt(4)) + " " + String.format("%08d", resultSet.getInt(5)) + " " + resultSet.getDate(6));
+                } while(resultSet.next());
+
+                System.out.print("  삭제할 Account ID(8자리 수) 입력: ");
+                int inputDeleteAccountID = keyboard.nextInt();
+
+                resultSet = statement.executeQuery("SELECT AccountID FROM account WHERE AcUserID = " + currentUserID + " AND AccountID = " + inputDeleteAccountID);
+
+                if(resultSet.next()) {
+                    statement.executeUpdate("DELETE FROM account WHERE AccountID = " + inputDeleteAccountID);
+                } else {
+                    System.out.println("  고객님께서 소유한 계좌가 아닙니다. 이전 이전 메뉴 선택 창으로 돌아갑니다.");
+                }
+            } else {
+                System.out.println("  현재 소유한 계좌가 없습니다. 이전 이전 메뉴 선택 창으로 돌아갑니다.");
+            }
+
         } catch (SQLException e) {
             System.out.println("DB Error: 이전 이전 메뉴 선택 창으로 돌아갑니다.");
         }
