@@ -801,7 +801,7 @@ public class Main {
                         } while (resultSet.next());
 
                     } else {
-                        System.out.println("Account가 존재하지 않습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                        System.out.println("Account 혹은 거래 내역이 존재하지 않습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
                     }
                     break;
                 default:
@@ -1189,7 +1189,7 @@ public class Main {
                         } while (resultSet.next());
 
                     } else {
-                        System.out.println("Account가 존재하지 않습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                        System.out.println("Account 혹은 거래 내역이 존재하지 않습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
                     }
                     break;
                 default:
