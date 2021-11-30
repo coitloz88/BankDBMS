@@ -6,6 +6,10 @@ import java.util.Scanner;
  * admin, branch는 최소 하나이상 존재해야함. ex) admin이 하나만 남은 경우 삭제 불가 / branch가 하나만 남은 경우 삭제 불가
  * 입금 = 1, 출금 = -1
  * isMinus == 1이면 마이너스 뚫기 가능
+ *
+ * branch는 제거할 수 없음(정보 수정만 가능)
+ *
+ * 통장에 발행해준 adminID는 찍히지 않음. 발행 점포만 찍힘
  */
 
 /**
@@ -548,6 +552,15 @@ public class Main {
                     break;
                 case 3: //admin 삭제
                     System.out.println("\n < Administrator 삭제 >");
+
+                    resultSet = statement.executeQuery("SELECT COUNT(*) FROM administrator");
+                    if(resultSet.next()){
+                        if(resultSet.getInt(1) <= 1){
+                            System.out.println(" Administrator 삭제 실패: 최소 한 명 이상의 Administrator가 존재해야 합니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                            return;
+                        }
+                    }
+
                     System.out.print("  삭제할 Administrator ID(8자리 수) 입력: ");
                     inputAdminID = keyboard.nextInt();
                     findAdminByID(inputAdminID);
@@ -556,7 +569,7 @@ public class Main {
                             statement.executeUpdate("DELETE FROM administrator WHERE AdminID = " + inputAdminID);
                             System.out.println(" Administrator 삭제 성공: 이전 메뉴 선택 창으로 돌아갑니다.");
                         } catch (SQLException e) {
-                            System.out.println(" Administrator 삭제 실패: 이전 메뉴 선택 창으로 돌아갑니다.");
+                            System.out.println(" Administrator 삭제 실패: Bank Branch의 Manager 삭제 시도 혹은 잘못된 접근입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
                             break;
                         }
                     } else {
@@ -590,7 +603,7 @@ public class Main {
                             inputAdminBranchID = keyboard.nextInt();
 
                             if (!isManagerUpdatePossible(inputAdminID, inputAdminBranchID)) {
-                                System.out.println(" Administrator 정보 수정 실패(Manager의 근무 branch는 변경 불가): 이전 메뉴 선택 창으로 돌아갑니다.");
+                                System.out.println(" Administrator 정보 수정 실패: Manager의 근무 branch는 변경할 수 없습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
                                 break;
                             }
 
@@ -879,12 +892,24 @@ public class Main {
                 case 4: //지점 삭제
                     System.out.println("\n <은행 지점 삭제>");
 
+                    resultSet = statement.executeQuery("SELECT COUNT(*) FROM bankbranch");
+                    if(resultSet.next()){
+                        if(resultSet.getInt(1) <= 1){
+                            System.out.println(" Bank Branch 삭제 실패: 최소 하나 이상의 Branch가 존재해야 합니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                            return;
+                        }
+                    }
+
+
                     System.out.print("  삭제할 Bank Branch ID(4자리 수) 입력: ");
                     inputBankBranchID = keyboard.nextInt();
 
                     findBranchByID(inputBankBranchID);
 
                     if (resultSet.next()) {
+
+                        System.out.print("  Branch를 삭제하기 위해서는 Branch에 근무하는 직원을 다른 Branch로 ");
+
                         try {
                             statement.executeUpdate("DELETE FROM bankBranch WHERE BranchID = " + inputBankBranchID);
                             System.out.println(" Bank Branch 삭제 성공: 이전 메뉴 선택 창으로 돌아갑니다.");
