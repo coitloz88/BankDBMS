@@ -209,7 +209,7 @@ public class Main {
 
     }
 
-    public static void adminMainMenu() throws SQLException { //TODO: 4, 5
+    public static void adminMainMenu() throws SQLException {
         int inputOption = -1;
         while (inputOption != 0) {
             System.out.println("\n------------ADMIN MODE-------------");
@@ -241,7 +241,7 @@ public class Main {
                 case 4:
                     adminShowTransaction(); //TODO
                     break;
-                case 5: //TODO
+                case 5:
                     adminManageBank();
                     break;
                 default:
