@@ -70,11 +70,16 @@ public class Main {
             System.out.println("Bank의 전체 Branch 목록: ");
             showBranches(-1);
 
-            do {
+
                 System.out.print("현재 BranchID(4자리수) 입력: ");
                 currentBranchID = keyboard.nextInt();
                 findBranchByID(currentBranchID);
-            } while(!resultSet.next());
+
+            while(!resultSet.next()){
+                System.out.print("존재하지 않는 BranchID입니다. 다시 입력해주세요(4자리 수): ");
+                currentBranchID = keyboard.nextInt();
+                findBranchByID(currentBranchID);
+            }
 
             int selectInput = -1;
 
@@ -661,7 +666,7 @@ public class Main {
                             System.out.println(String.format("%08d", resultSet.getInt(4)) + " " + String.format("%08d", resultSet.getInt(5)) + " " + resultSet.getDate(6));
                         } while (resultSet.next());
                     } else {
-                        System.out.println("Account가 존재하지 않습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                        System.out.println("User가 존재하지 않습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
                     }
                     break;
                 case 3: //전체 조회
@@ -707,12 +712,12 @@ try{
                 findTransactionByAccountID(inputAccountID);
 
                 if(resultSet.next()){ //account 존재
-                    System.out.println("TimeStamp           Type Amount      BranchID");
+                    System.out.println("TimeStamp               Type Amount            BranchID");
                     do{
                         String type = resultSet.getInt(2) == 1 ? "입금" : "출금";
-                        System.out.print(resultSet.getDate(1) + " " + type);
-                        System.out.printf("  %-10d", resultSet.getInt(3));
-                        System.out.println(String.format("%08d", resultSet.getInt(4)));
+                        System.out.print(resultSet.getTimestamp(1) + "   " + type);
+                        System.out.printf("  %-18d", resultSet.getInt(3));
+                        System.out.println(String.format("%04d", resultSet.getInt(4)));
                     }while(resultSet.next());
 
                 } else {
@@ -722,6 +727,7 @@ try{
             case 2: //user ID로 검색
                 System.out.print(" 거래 내역을 검색할 User ID(8자리 수) 입력: ");
                 int inputUserID = keyboard.nextInt();
+                //TODO: 계좌 입출금 user로 찾는거 test해보기 -> 안됨요..ㅜ
 
 
                 try {
@@ -763,7 +769,6 @@ try{
                         System.out.printf("  %-10d", resultSet.getInt(3));
                         System.out.println(String.format("%08d", resultSet.getInt(4)));
                     }
-                    //TODO: 계좌 입출금 user로 찾는거 test해보기
                 } catch (SQLException e) {
                     System.out.println("해당 User 혹은 User의 Account 및 기록이 존재하지 않습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
                 }
@@ -838,7 +843,7 @@ try{
                         inputManagerID = keyboard.nextInt();
                         resultSet = statement.executeQuery("SELECT BranchID FROM bankbranch WHERE ManagerID = " + inputManagerID);
                         if (resultSet.next()) {
-                            System.out.print(" 해당 Administrator는 이미 다른 지점의 Manager을 맡고 있습니다. Branch 등록을 계속 하시려면 1, 등록을 취소하고 이전 메뉴로 돌아가시려면 0을 입력해주세요: ");
+                            System.out.print(" 해당 Administrator는 이미 Manager을 맡고 있습니다. Branch 등록을 계속 하시려면 1, 등록을 취소하고 이전 메뉴로 돌아가시려면 0을 입력해주세요: ");
                             int tmpOption = keyboard.nextInt();
                             if(tmpOption == 0){
                                 return;
@@ -859,7 +864,7 @@ try{
                         preparedStatement.setString(3, inputLo_details);
                         preparedStatement.setInt(4, inputManagerID);
                         preparedStatement.executeUpdate();
-                        System.out.println(" Bank Branch 추가 완료, ID: " + inputBankBranchID);
+                        System.out.println(" Bank Branch 추가 완료, ID: " + String.format("%04d", inputBankBranchID));
                     } catch (SQLException e) {
                         System.out.println(" Bank Branch 추가 실패: Invalid input, 이전 메뉴 선택 창으로 돌아갑니다..");
                     }
@@ -1081,6 +1086,8 @@ try{
             System.out.println("DB Error: 이전 이전 메뉴 선택 창으로 돌아갑니다.");
         }
     }
+
+    //public static void user
 
     public static void userNewAccount(){
         //TODO
