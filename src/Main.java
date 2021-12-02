@@ -75,7 +75,7 @@ public class Main {
             showBranches(-1);
 
 
-            System.out.print("현재 BranchID(4자리수) 입력: ");
+            System.out.print("\n현재 BranchID(4자리수) 입력: ");
             currentBranchID = keyboard.nextInt();
             findBranchByID(currentBranchID);
 
@@ -88,7 +88,9 @@ public class Main {
             int selectInput = -1;
 
             //가장 외부 menu 선택 화면에서 종료를 입력할때까지 계속해서 실행됨
-            while (selectInput != 0) {
+            while (true) {
+                System.out.println("\n현재 지점 정보는 다음과 같습니다. ");
+                showBranches(currentBranchID);
                 selectInput = menuSelectPosition();
 
                 if (selectInput == 1) {
@@ -96,7 +98,7 @@ public class Main {
                 } else if (selectInput == 2) {
                     userMainMenu();
                 } else if (selectInput == 0) {
-
+                    break;
                 } else {
                     System.out.println("잘못된 입력입니다.");
                 }
@@ -163,14 +165,14 @@ public class Main {
 
 
     public static void findBranchByID(int inputBranchID) throws SQLException {
-        resultSet = statement.executeQuery("SELECT BranchID, Lo_state, Lo_details, ManagerID FROM bankbranch WHERE BranchID = " + inputBranchID + " AND isValid = 1");
+        resultSet = statement.executeQuery("SELECT BranchID, Lo_state, Lo_details, ManagerID, isValid FROM bankbranch WHERE BranchID = " + inputBranchID + " AND isValid = 1");
     }
 
     public static void showBranches(int inputBranchID) {
         System.out.println("BranchID Location                 ManagerID");
         try {
             if (inputBranchID == -1) {
-                resultSet = statement.executeQuery("SELECT BranchID, Lo_state, Lo_details, ManagerID WHERE isValid = 1 FROM bankbranch");
+                resultSet = statement.executeQuery("SELECT BranchID, Lo_state, Lo_details, ManagerID FROM bankbranch WHERE isValid = 1");
                 while (resultSet.next()) {
                     String address = resultSet.getString(2) + " " + resultSet.getString(3);
                     System.out.print(String.format("%04d", resultSet.getInt(1)) + "     ");
@@ -247,20 +249,28 @@ public class Main {
 
         findDBManagerByID(inputDBManagerID);
 
-        if(resultSet.next()){
-            System.out.println("  DB Manager 로그인 성공!");
-            System.out.println("  안녕하세요, " + resultSet.getString(3) + " " + resultSet.getString(2) + "님.");
-            return inputDBManagerID;
-        } else {
-            System.out.println("  존재하지 않는 DB Manager ID 입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
-            return -1;
+        if (resultSet.next()) {
+            System.out.print("  비밀번호 입력(공백 제외 최대 15자): ");
+            String inputPassword = keyboard.next();
+
+            if (inputPassword.equals(resultSet.getString(8))) {
+                System.out.println("  DB Manager 로그인 성공!");
+                System.out.println("  안녕하세요, " + resultSet.getString(3) + " " + resultSet.getString(2) + "님.");
+                return inputDBManagerID;
+            } else {
+                System.out.println("  로그인에 실패했습니다.");
+            }
         }
+        System.out.println("  ID 혹은 비밀번호가 틀렸습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+        return -1;
     }
 
 
 
+
     public static void adminMainMenu() throws SQLException {
-        if(adminLoginByID() == -1) return;
+        int adminID = 0;
+        if((adminID = adminLoginByID()) == -1) return;
 
         int inputOption = -1;
         while (inputOption != 0) {
@@ -286,7 +296,7 @@ public class Main {
                     adminManageUser();
                     break;
                 case 2:
-                    adminManageAdmin();
+                    if(!adminManageAdmin(adminID)) return;
                     break;
                 case 3:
                     adminShowAccounts();
@@ -299,8 +309,9 @@ public class Main {
                     break;
                 case 6:
                     DBManagerMode();
+                    break;
                 default:
-                    System.out.println("잘못된 입력입니다.");
+                    System.out.println("잘못된 입력입니다.2");
                     break;
             }
         }
@@ -496,7 +507,7 @@ public class Main {
     }
 
     //complete
-    public static void adminManageAdmin() {
+    public static boolean adminManageAdmin(int currentAdminID) {
         try {
             int inputOption = -1;
             System.out.println("\n < Administrator 정보 관리 >");
@@ -509,7 +520,7 @@ public class Main {
             inputOption = keyboard.nextInt();
             switch (inputOption) {
                 case 0:
-                    return;
+                    return true;
                 case 1:
                     System.out.println("\n < Administrator 정보 조회 >");
                     System.out.println("  1. Administrator ID로 검색하기");
@@ -550,7 +561,7 @@ public class Main {
                         System.out.println("유효하지 않은 입력입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
                     }
                     break;
-                case 2: //User 추가
+                case 2: //admin 추가
                     System.out.println("\n < Administrator 추가 등록 >");
                     int inputAdminID = 0;
                     while (true) {
@@ -558,8 +569,8 @@ public class Main {
                         inputAdminID = keyboard.nextInt();
 
                         findAdminByID(inputAdminID);
-                        if (resultSet.next()) {
-                            System.out.println("이미 존재하는 ID입니다. 다른 ID를 입력해주십시오.");
+                        if (resultSet.next() || inputAdminID <= 0) {
+                            System.out.println(" 유효하지 않거나 이미 존재하는 ID입니다. 다른 ID를 입력해주십시오.");
                         } else {
                             break;
                         }
@@ -586,6 +597,9 @@ public class Main {
                     int inputAdminBranchID = keyboard.nextInt();
 
                     try {
+                        findBranchByID(inputAdminBranchID);
+                        if(!resultSet.next()) throw new SQLException();
+
                         preparedStatement = connection.prepareStatement("INSERT INTO administrator(AdminID, Fname, Lname, phoneNum, Ad_state, Ad_details, BirthDate, AdBranchID) values (?,?,?,?,?,?,?,?)");
                         preparedStatement.setInt(1, inputAdminID);
                         preparedStatement.setString(2, inputFname);
@@ -614,7 +628,7 @@ public class Main {
                         String address = resultSet.getString(5) + " " + resultSet.getString(6);
                         System.out.printf(" %-20s %-13s %-30s ", name, resultSet.getString(4), address);
                         System.out.print(resultSet.getDate(7));
-                        System.out.println(" " + resultSet.getInt(8));
+                        System.out.println(" " + String.format("%04d", resultSet.getInt(8)));
 
                     } else {
                         System.out.println(" Administrator 추가 실패: 예기치 못한 에러, 이전 메뉴 선택 창으로 돌아갑니다.");
@@ -627,18 +641,27 @@ public class Main {
                     resultSet = statement.executeQuery("SELECT COUNT(*) FROM administrator");
                     if(resultSet.next() && resultSet.getInt(1) <= 1){
                             System.out.println(" Administrator 삭제 실패: 최소 한 명 이상의 Administrator가 존재해야 합니다. 이전 메뉴 선택 창으로 돌아갑니다.");
-                            return;
+                            return true;
                     }
 
                     System.out.print("  삭제할 Administrator ID(8자리 수) 입력: ");
                     inputAdminID = keyboard.nextInt();
+
+                    resultSet = statement.executeQuery("SELECT ManagerID FROM bankbranch WHERE ManagerID = " + inputAdminID);
+                    if(resultSet.next()){
+                        System.out.println("  Manager는 삭제할 수 없습니다. Branch의 Manager의 수정을 원하신다면 '은행 관리'창에서 Manager를 변경해주세요.\n 이전 메뉴로 돌아갑니다.");
+                        break;
+                    }
+
                     findAdminByID(inputAdminID);
+
                     if (resultSet.next()) {
                         try {
                             statement.executeUpdate("DELETE FROM administrator WHERE AdminID = " + inputAdminID);
                             System.out.println(" Administrator 삭제 성공: 이전 메뉴 선택 창으로 돌아갑니다.");
+                            if(currentAdminID == inputAdminID) return false;
                         } catch (SQLException e) {
-                            System.out.println(" Administrator 삭제 실패: 잘못된 접근입니다.\n Branch의 Manager 수정을 원하신다면 '은행 관리'창에서 Manager를 변경해주세요.\n 이전 메뉴 선택 창으로 돌아갑니다.");
+                            System.out.println(" Administrator 삭제 실패: 잘못된 접근입니다.\n 이전 메뉴 선택 창으로 돌아갑니다.");
                             break;
                         }
                     } else {
@@ -676,6 +699,9 @@ public class Main {
                                 break;
                             }
 
+                            findBranchByID(inputAdminBranchID);
+                            if(!resultSet.next()) throw new SQLException();
+
                             preparedStatement = connection.prepareStatement("UPDATE administrator SET Fname = ?, Lname = ?, phoneNum = ?, Ad_state = ?, Ad_details = ?, AdBranchID = ? WHERE AdminID = ?");
                             preparedStatement.setString(1, inputFname);
                             preparedStatement.setString(2, inputLname);
@@ -703,7 +729,9 @@ public class Main {
             }
         } catch (SQLException e) {
             System.out.println("DB Error: 이전 이전 메뉴 선택 창으로 돌아갑니다.");
+            return true;
         }
+        return true;
     }
 
     //adminManageAdmin()의 보조 함수
@@ -1066,6 +1094,7 @@ public class Main {
             if ((currentDBManagerID = dbManagerLoginByID()) == -1) return;
 
             int inputOption = -1;
+
             while (inputOption != 0) {
 
                 System.out.println("\n-----------DB Manager MODE----------");
@@ -1087,15 +1116,26 @@ public class Main {
                     case 0:
                         return;
                     case 1:
-                        System.out.println("\n <Account Transaction 삭제하기>");
+                        System.out.println("\n <Account Transaction 삭제하기>"); //TODO: 마이너스 통장
                         System.out.println("  Account ID로 계좌 입출금 내역을 조회한 뒤, 원하는 기록을 삭제할 수 있습니다.");
                         System.out.print("  1. 입출금 내역을 검색할 계좌의 AccountID(000-0000-0000) 입력: ");
                         String inputAccountID = keyboard.next();
 
+                        int isMinus = 0;
+                        long balance = 0;
                         findAccountByAccountID(inputAccountID);
+                        if(resultSet.next()){
+                            balance = resultSet.getLong(2);
+                            isMinus = resultSet.getInt(3);
+                        } else {
+                            System.out.println("  Account ID를 가진 계좌가 존재하지 않습니다. 이전 메뉴로 돌아갑니다.");
+                            break;
+                        }
+
+                        findTransactionByAccountID(inputAccountID);
 
                         if(resultSet.next()){
-                            System.out.println("  " + inputAccountID + "의 입출금 내역은 다음과 같습니다.");
+                            System.out.println("    " + inputAccountID + "의 입출금 내역은 다음과 같습니다.");
                             System.out.println("TimeStamp               Type Amount            BranchID");
                             do {
                                 String type = resultSet.getInt(2) == 1 ? "입금" : "출금";
@@ -1110,32 +1150,66 @@ public class Main {
                             String inputTimeStamp = keyboard.nextLine();
 
                             try {
+                                if (isMinus != 1) { //마이너스 통장 불가
+
+                                    preparedStatement = connection.prepareStatement("SELECT acType, amount FROM actransaction WHERE acTimeStamp = ? AND TAccountID = ?");
+                                    preparedStatement.setString(1, inputTimeStamp);
+                                    preparedStatement.setString(2, inputAccountID);
+                                    resultSet = preparedStatement.executeQuery();
+
+                                    if(resultSet.next()){
+                                        //기록이 삭제 가능한지 확인
+                                        if(resultSet.getInt(1) == 1 && balance - resultSet.getInt(2) < 0){ //입금 기록을 삭제하는 것(돈을 빼는 것)
+                                            System.out.println("  ID: " + inputAccountID + "의 계좌에서는 해당 기록을 지울 수 없습니다(마이너스 통장 불가). 이전 메뉴로 돌아갑니다.");
+                                            break;
+                                        }
+                                    } else {
+                                        System.out.println("  해당하는 계좌의 거래 내역이 존재하지 않습니다. 이전 메뉴로 돌아갑니다.");
+                                        break;
+                                    }
+                                }
+
+
                                 preparedStatement = connection.prepareStatement("DELETE FROM actransaction WHERE acTimeStamp = ? AND TAccountID = ?");
                                 preparedStatement.setString(1, inputTimeStamp);
                                 preparedStatement.setString(2, inputAccountID);
                                 preparedStatement.executeUpdate();
                                 DBManagerUpdateAccount(inputAccountID);
+
+                                System.out.println("  기록 삭제를 완료하였습니다.");
+
                             } catch (SQLException e){
                                 System.out.println(" Invalid input: 이전 메뉴로 돌아갑니다.");
                                 break;
                             }
 
                         } else {
-                            System.out.println("  해당하는 Account ID를 가진 계좌가 존재하지 않거나 해당 계좌의 거래 내역이 존재하지 않습니다. 이전 메뉴로 돌아갑니다.");
+                            System.out.println("  해당하는 계좌의 거래 내역이 존재하지 않습니다. 이전 메뉴로 돌아갑니다.");
                         }
                         System.out.println();
                         break;
 
                     case 2:
-                        System.out.println("\n <Account Transaction 수정하기>");
+                        System.out.println("\n <Account Transaction 수정하기>"); //TODO: 마이너스 통장
                         System.out.println("  Account ID로 계좌 입출금 내역을 조회한 뒤, 원하는 기록을 수정할 수 있습니다.");
                         System.out.print("  1. 입출금 내역을 검색할 계좌의 AccountID(000-0000-0000) 입력: ");
                         inputAccountID = keyboard.next();
 
+                         isMinus = 0;
+                         balance = 0;
                         findAccountByAccountID(inputAccountID);
+                        if(resultSet.next()){
+                            balance = resultSet.getLong(2);
+                            isMinus = resultSet.getInt(3);
+                        } else {
+                            System.out.println("Account ID를 가진 계좌가 존재하지 않습니다. 이전 메뉴로 돌아갑니다.");
+                            break;
+                        }
+
+                        findTransactionByAccountID(inputAccountID);
 
                         if(resultSet.next()){
-                            System.out.println("  " + inputAccountID + "의 입출금 내역은 다음과 같습니다.");
+                            System.out.println("    " + inputAccountID + "의 입출금 내역은 다음과 같습니다.");
                             System.out.println("TimeStamp               Type Amount            BranchID");
                             do {
                                 String type = resultSet.getInt(2) == 1 ? "입금" : "출금";
@@ -1150,7 +1224,7 @@ public class Main {
                             String inputTimeStamp = keyboard.nextLine();
 
                             try {
-                                System.out.print("  (1) TimeStamp 수정(0000-00-00 00:00:00):");
+                                System.out.print("  (1) TimeStamp 수정(0000-00-00 00:00:00): ");
                                 String updateTimeStamp = keyboard.nextLine();
                                 System.out.print("  (2) Type 수정(입금: 1, 출금: -1): ");
                                 int updateType = keyboard.nextInt();
@@ -1158,6 +1232,33 @@ public class Main {
                                 int updateAmount = keyboard.nextInt();
                                 System.out.print("  (4) BranchID 수정(4자리수): ");
                                 int updateBranchID = keyboard.nextInt();
+
+
+                                if (isMinus != 1) { //마이너스 통장 불가
+
+                                    preparedStatement = connection.prepareStatement("SELECT acType, amount FROM actransaction WHERE acTimeStamp = ? AND TAccountID = ?");
+                                    preparedStatement.setString(1, inputTimeStamp);
+                                    preparedStatement.setString(2, inputAccountID);
+                                    resultSet = preparedStatement.executeQuery();
+
+                                    if(resultSet.next()){
+                                        //기록이 삭제 가능한지 확인
+                                        /*
+                                        1. original 금액을 빼거나(본래 입금 기록인 경우) 더함(본래 출금 기록인 경우)
+                                        2. updateInput의 값을 더하거나 뺌
+                                         */
+                                        int originalM = resultSet.getInt(1) == 1 ? -resultSet.getInt(2) : resultSet.getInt(2);
+                                        int updateM = updateType == 1 ? updateAmount : -updateAmount;
+
+                                        if((balance + originalM + updateM) < 0){ //입금 기록을 삭제하는 것(돈을 빼는 것)
+                                            System.out.println("  ID: " + inputAccountID + "의 계좌에서는 해당 기록을 수정할 수 없습니다(마이너스 통장 불가). 이전 메뉴로 돌아갑니다.");
+                                            break;
+                                        }
+                                    } else {
+                                        System.out.println("  해당하는 계좌의 거래 내역이 존재하지 않습니다. 이전 메뉴로 돌아갑니다.");
+                                        break;
+                                    }
+                                }
 
                                 preparedStatement = connection.prepareStatement("UPDATE actransaction SET acTimeStamp = ?, acType = ?, amount = ?, TBranchID = ? WHERE acTimeStamp = ? AND TaccountID = ?");
                                 preparedStatement.setString(1, updateTimeStamp);
@@ -1168,13 +1269,14 @@ public class Main {
                                 preparedStatement.setString(6, inputAccountID);
                                 preparedStatement.executeUpdate();
                                 DBManagerUpdateAccount(inputAccountID);
+                                System.out.println("  기록 수정을 완료하였습니다.");
                             } catch (SQLException e){
-                                System.out.println(" Invalid input: 이전 메뉴로 돌아갑니다.");
+                                System.out.println("  Invalid input: 이전 메뉴로 돌아갑니다.");
                                 break;
                             }
 
                         } else {
-                            System.out.println("  해당하는 Account ID를 가진 계좌가 존재하지 않거나 해당 계좌의 거래 내역이 존재하지 않습니다. 이전 메뉴로 돌아갑니다.");
+                            System.out.println("  해당하는 계좌의 거래 내역이 존재하지 않습니다. 이전 메뉴로 돌아갑니다.");
                         }
                         System.out.println();
                         break;
@@ -1211,54 +1313,72 @@ public class Main {
                             int inputDeleteBankBranchID = keyboard.nextInt();
                             findBranchByID(inputDeleteBankBranchID);
 
-                            if (resultSet.next()) {
+                            if (resultSet.next() && resultSet.getInt(5) != 0) {
                                 try {
                                     statement.executeUpdate("DELETE FROM administrator WHERE AdBranchID = " + inputDeleteBankBranchID);
                                     statement.executeUpdate("UPDATE bankbranch SET ManagerID = NULL, isValid = 0 WHERE BranchID = " + inputDeleteBankBranchID);
                                     System.out.println("  ID: " + String.format("%04d", inputDeleteBankBranchID) + "의 Bank Branch가 비활성화 되었습니다.");
+
+                                    System.out.println("\n <현재 Bank Branch 재선택>");
+                                    System.out.println("  현재 vaild한 Bank Branch는 다음과 같습니다. ");
+                                    showBranches(-1);
+
+                                    System.out.print("  현재 BranchID(4자리수) 입력: ");
+                                    currentBranchID = keyboard.nextInt();
+
+                                    findBranchByID(currentBranchID);
+                                    while (!resultSet.next()) {
+                                        System.out.print("유효하지 않은 BranchID입니다. 다시 입력해주세요(4자리 수): ");
+                                        currentBranchID = keyboard.nextInt();
+                                        findBranchByID(currentBranchID);
+                                    }
+
                                 } catch (SQLException e) {
                                     System.out.println(" Invalid input: 이전 메뉴로 돌아갑니다.");
                                     break;
                                 }
                             } else {
-                                System.out.println(" 해당하는 ID의 Branch가 존재하지 않습니다. 이전 메뉴로 돌아갑니다.");
+                                System.out.println(" 해당하는 ID의 Branch가 존재하지 않거나 이미 비활성화되어 있습니다. 이전 메뉴로 돌아갑니다.");
                             }
                         } else if (inputOption3 == 2){
                             //재활성화
                             System.out.println("\n < Bank Branch 재활성화 >");
                             System.out.print("  재활성화할 Bank Branch ID를 입력(4자리 수): ");
                             int inputUpdateBranchID = keyboard.nextInt();
-                            findBranchByID(inputUpdateBranchID);
+                            resultSet = statement.executeQuery("SELECT * FROM bankbranch WHERE BranchID = " + inputUpdateBranchID);
 
-                            if (resultSet.next()) {
+                            if (resultSet.next() && resultSet.getInt(5) != 1) {
                                 try {
-                                    System.out.print(" 새로운 Manager ID를 입력: ");
+                                    System.out.print("  새로운 Manager ID를 입력: ");
                                     int inputNewManagerID = keyboard.nextInt();
 
+                                    boolean flag = false;
                                     while(!isManagerUpdatePossible(inputNewManagerID, inputUpdateBranchID)){
-                                        System.out.print(" 해당 Administrator은 이미 다른 Branch의 Manager을 맡고 있습니다. 다시 입력하시려면 1, 재활성화를 취소하시려면 0을 입력해주세요: ");
+                                        System.out.print("  해당 Administrator은 이미 다른 Branch의 Manager을 맡고 있습니다. 다시 입력하시려면 1, 재활성화를 취소하시려면 0을 입력해주세요: ");
                                         int ZeroOrOne = keyboard.nextInt();
 
                                         if(ZeroOrOne == 0){
-                                            System.out.println(" Branch 재활성화가 취소되었습니다.");
-                                            return;
+                                            System.out.println("  Branch 재활성화가 취소되었습니다."); flag = true;
+                                            break;
                                         } else {
-                                            System.out.print(" 새로운 Manager ID를 입력: ");
+                                            System.out.print("  새로운 Manager ID를 입력: ");
                                             inputNewManagerID = keyboard.nextInt();
                                         }
                                     }
+                                    if(flag) break;
 
                                     statement.executeUpdate("UPDATE bankbranch SET ManagerID = " + inputNewManagerID + ", isValid = 1 WHERE BranchID = " + inputUpdateBranchID);
+                                    statement.executeUpdate("UPDATE administrator SET AdBranchID = " + inputUpdateBranchID + " WHERE AdminID = " + inputNewManagerID);
                                     System.out.println("  ID: " + String.format("%04d", inputUpdateBranchID) + "의 Bank Branch가 재활성화 되었습니다.");
                                 } catch (SQLException e) {
                                     System.out.println(" Invalid input: 이전 메뉴로 돌아갑니다.");
                                     break;
                                 }
                             } else {
-                                System.out.println(" 해당하는 ID의 Branch가 존재하지 않습니다. 이전 메뉴로 돌아갑니다.");
+                                System.out.println("  해당하는 ID의 Branch가 존재하지 않거나 이미 활성화 되어있습니다. 이전 메뉴로 돌아갑니다.");
                             }
                         } else {
-                            System.out.println("유효하지 않은 입력입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                            System.out.println("  유효하지 않은 입력입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
                         }
                         System.out.println();
                         break;
@@ -1322,7 +1442,7 @@ public class Main {
                         if (resultSet.next()) {
                             System.out.println("\n 다음의 DB Manager을 추가하였습니다: ");
                             System.out.println("ManagerID Name                 phoneNum      Address                        BirthDate  Password");
-                            System.out.print(String.format("%08d", resultSet.getInt(1)));
+                            System.out.print(String.format("%08d ", resultSet.getInt(1)));
                             String name = resultSet.getString(2) + " " + resultSet.getString(3);
                             String address = resultSet.getString(5) + " " + resultSet.getString(6);
                             System.out.printf(" %-20s %-13s %-30s ", name, resultSet.getString(4), address);
@@ -1339,9 +1459,11 @@ public class Main {
                         System.out.println("\n < DB Manager 삭제 >");
 
                         resultSet = statement.executeQuery("SELECT COUNT(*) FROM dbmanager");
+
+
                         if(resultSet.next() && resultSet.getInt(1) <= 1){
                                 System.out.println(" DB Manager 삭제 실패: 최소 한 명 이상의 DB Manager가 존재해야 합니다. 이전 메뉴 선택 창으로 돌아갑니다.");
-                                return;
+                                break;
                         }
 
                         System.out.print("  삭제할 DB Manager ID(8자리 수) 입력: ");
@@ -1363,10 +1485,9 @@ public class Main {
                         break;
                         
                     case 6: //DB Manager 수정
-                        System.out.println("\n < Administrator 정보 수정 >");
-                        System.out.print("  수정할 Administrator ID(8자리 수) 입력: ");
-                        inputAdminID = keyboard.nextInt();
-                        findAdminByID(inputAdminID);
+                        System.out.println("\n < DB Manager 정보 수정 >");
+                        System.out.println("  내 DB Manager 정보를 수정할 수 있습니다.");
+                        findDBManagerByID(currentDBManagerID);
 
                         if (resultSet.next()) {
                             try {
@@ -1395,7 +1516,7 @@ public class Main {
                                 preparedStatement.setString(4, inputAd_state);
                                 preparedStatement.setString(5, inputAd_details);
                                 preparedStatement.setString(6, inputPassword);
-                                preparedStatement.setInt(7, inputAdminID);
+                                preparedStatement.setInt(7, currentDBManagerID);
 
                                 preparedStatement.executeUpdate();
 
@@ -1423,7 +1544,7 @@ public class Main {
                                 System.out.print(String.format("%08d", resultSet.getInt(1)));
                                 String name = resultSet.getString(2) + " " + resultSet.getString(3);
                                 String address = resultSet.getString(5) + " " + resultSet.getString(6);
-                                System.out.printf(" %-20s %-13s %-30s ", name, resultSet.getString(4), address);
+                                System.out.printf("  %-20s %-13s %-30s ", name, resultSet.getString(4), address);
                                 System.out.print(resultSet.getDate(7));
                                 System.out.println(" " + resultSet.getString(8));
                             } else {
@@ -1437,7 +1558,7 @@ public class Main {
                                 System.out.print(String.format("%08d", resultSet.getInt(1)));
                                 String name = resultSet.getString(2) + " " + resultSet.getString(3);
                                 String address = resultSet.getString(5) + " " + resultSet.getString(6);
-                                System.out.printf(" %-20s %-13s %-30s ", name, resultSet.getString(4), address);
+                                System.out.printf("  %-20s %-13s %-30s ", name, resultSet.getString(4), address);
                                 System.out.println(resultSet.getDate(7));
                             }
                         } else {
@@ -1460,6 +1581,8 @@ public class Main {
             System.out.println("  DB Error: 이전 이전 메뉴 선택 창으로 돌아갑니다.");
         }
     }
+
+
 
     public static void DBManagerUpdateAccount(String inputAccountID) throws SQLException {
         long totalSum = 0;
@@ -1493,6 +1616,7 @@ public class Main {
             System.out.println(" 3. 내 계좌 조회");
             System.out.println(" 4. 내 계좌 개설");
             System.out.println(" 5. 내 계좌 삭제");
+            System.out.println(" 6. 내 계좌 정보 수정");
             System.out.println("------------------------------------");
             System.out.print(" Input: ");
             inputOption = keyboard.nextInt();
@@ -1516,6 +1640,8 @@ public class Main {
                 case 5:
                     userDeleteAccount();
                     break;
+                case 6:
+                    userUpdateAccount();
                 default:
                     System.out.println("잘못된 입력입니다.");
                     break;
@@ -1575,9 +1701,9 @@ public class Main {
 
             if (resultSet.next()) {
                 System.out.print(" 계좌 비밀번호 입력(4자리 수): ");
-                int inputPassword = keyboard.nextInt();
+                String inputPassword = keyboard.next();
 
-                if (inputPassword == resultSet.getInt(3)) {
+                if (inputPassword.equals(resultSet.getString(3))) {
                     System.out.print(" 출금할 금액 입력: ");
                     int inputBalance = keyboard.nextInt();
 
@@ -1821,4 +1947,107 @@ public class Main {
         }
     }
 
+    public static void userUpdateAccount(){
+        try {
+            int currentUserID;
+            if ((currentUserID = userLoginByID()) == -1) {
+                return;
+            }
+
+            System.out.println("\n <내 계좌 정보 수정>");
+            System.out.println(" 0. Return to previous menu");
+            System.out.println(" 1. 마이너스 통장 여부 변경");
+            System.out.println(" 2. Password 변경");
+            System.out.print(" Input: ");
+            int inputOption = keyboard.nextInt();
+
+
+            switch (inputOption) {
+                case 0:
+                    return;
+                case 1: //마이너스 통장 여부 변경
+                    resultSet = statement.executeQuery("SELECT AccountID FROM account WHERE AcUserID = " + currentUserID);
+
+                    if(resultSet.next()) {
+                        System.out.println("\n  현재 소유하고 계신 계좌는 다음과 같습니다.");
+                        showAccountsByUserID(currentUserID);
+                        System.out.print("\n  Minus 여부를 변경할 계좌 번호를 입력해주세요(000-0000-0000):");
+                        String inputAcocuntID = keyboard.next();
+
+                        preparedStatement = connection.prepareStatement("SELECT AccountID, Balance, Password, isMinus FROM account WHERE AccountID = ?, AcUserID = ?");
+                        preparedStatement.setString(1, inputAcocuntID);
+                        preparedStatement.setInt(2, currentUserID);
+                        resultSet = preparedStatement.executeQuery();
+
+                        if(resultSet.next()){
+                            //마이너스 통장 문제
+                            if(resultSet.getInt(4) == 1){
+                                if(resultSet.getLong(2) < 0) {
+                                    System.out.println("  해당 통장은 잔액 부족으로 인해 일반 통장으로 변경이 불가합니다. 이전 메뉴 선택 창으로 돌아갑니다.\n");
+                                    return;
+                                } else {
+                                    //마이너스 통장 -> 일반 통장
+                                    preparedStatement = connection.prepareStatement("UPDATE account SET isMinus = -1 WHERE AccountID = ?");
+                                    preparedStatement.setString(1, inputAcocuntID);
+                                    preparedStatement.executeUpdate();
+                                }
+                            } else {
+                                //일반 통장 -> 마이너스 통장
+                                preparedStatement = connection.prepareStatement("UPDATE account SET isMinus = 1 WHERE AccountID = ?");
+                                preparedStatement.setString(1, inputAcocuntID);
+                                preparedStatement.executeUpdate();
+                            }
+                            System.out.println("  마이너스 통장 가능 여부를 변경하였습니다.\n");
+
+                        } else {
+                            System.out.println("  유효하지 않은 계좌 번호를 입력하셨습니다. 이전 메뉴 선택 창으로 돌아갑니다.\n");
+                        }
+
+                    } else {
+                        System.out.println("  현재 소유하고 계신 계좌가 없습니다. 이전 메뉴 선택 창으로 돌아갑니다.\n");
+                    }
+                    break;
+                case 2: //비번 변경
+                    resultSet = statement.executeQuery("SELECT AccountID FROM account WHERE AcUserID = " + currentUserID);
+
+                    if(resultSet.next()) {
+                        System.out.println("\n  현재 소유하고 계신 계좌는 다음과 같습니다.");
+                        showAccountsByUserID(currentUserID);
+                        System.out.print("\n  Password를 변경할 계좌 번호를 입력해주세요(000-0000-0000):");
+                        String inputAcocuntID = keyboard.next();
+
+                        preparedStatement = connection.prepareStatement("SELECT Password FROM account WHERE AccountID = ?, AcUserID = ?");
+                        preparedStatement.setString(1, inputAcocuntID);
+                        preparedStatement.setInt(2, currentUserID);
+                        resultSet = preparedStatement.executeQuery();
+
+                        if(resultSet.next()){
+                            String originalPW = resultSet.getString(1);
+                            System.out.print("  계좌 비밀번호 입력(4자리 수): ");
+                            String inputPW = keyboard.next();
+
+                            if(originalPW.equals(inputPW)){
+                                System.out.print("  변경할 비밀번호 입력(4자리 수): ");
+                                String newPW = keyboard.next();
+                                preparedStatement = connection.prepareStatement("UPDATE Account SET Password = ? WHERE AccountID = ?");
+                                preparedStatement.setString(1, newPW);
+                                preparedStatement.setString(2, inputAcocuntID);
+                                preparedStatement.executeUpdate();
+
+                                System.out.println("  비밀번호 변경이 완료되었습니다.\n");
+                            } else {
+                                System.out.println(" 비밀번호가 일치하지 않습니다. 이전 메뉴 선택 창으로 돌아갑니다.\n");
+                            }
+                        } else {
+                            System.out.println("  유효하지 않은 계좌 번호를 입력하셨습니다. 이전 메뉴 선택 창으로 돌아갑니다.\n");
+                        }
+                    } else {
+                        System.out.println("  현재 소유하고 계신 계좌가 없습니다. 이전 메뉴 선택 창으로 돌아갑니다.\n");
+                    }
+                    break;
+            }
+        } catch (SQLException e) {
+            System.out.println("DB Error: 이전 이전 메뉴 선택 창으로 돌아갑니다.");
+        }
+    }
 }
