@@ -38,17 +38,18 @@ public class Main {
             Class.forName("com.mysql.cj.jdbc.Driver");
 
             String DB_URL = "jdbc:mysql://localhost:3306/bankApp?serverTimezone=Asia/Seoul&useSSL=false";
-/*
-            //TODO: id, pw 로그인해서 db에 접속
+
+/*            //TODO: id, pw 로그인해서 db에 접속
             System.out.print("Enter ID: ");
             String DB_ID = keyboard.next();
 
             System.out.print("Enter PW: ");
             String DB_PW = keyboard.next();
-*/
-            String DB_ID = "root"; //delete this!
-            String DB_PW = "tksxhflsl12#"; //delete this!
+
             connection = DriverManager.getConnection(DB_URL, DB_ID, DB_PW);
+
+ */
+            connection = DriverManager.getConnection(DB_URL, "root", "tksxhflsl12#");
             if (connection == null) {
                 System.err.println(". . . DB 접속 실패");
                 return;
@@ -165,26 +166,27 @@ public class Main {
 
 
     public static void findBranchByID(int inputBranchID) throws SQLException {
-        resultSet = statement.executeQuery("SELECT BranchID, Lo_state, Lo_details, ManagerID, isValid FROM bankbranch WHERE BranchID = " + inputBranchID + " AND isValid = 1");
+        resultSet = statement.executeQuery("SELECT BranchID, Lo_state, Lo_details, ManagerID FROM bankbranch WHERE BranchID = " + inputBranchID + " AND ManagerID is NOT NULL");
     }
 
     public static void showBranches(int inputBranchID) {
-        System.out.println("BranchID Location                 ManagerID");
+        System.out.println("BranchID Location                 ManagerID 사원 수");
         try {
             if (inputBranchID == -1) {
-                resultSet = statement.executeQuery("SELECT BranchID, Lo_state, Lo_details, ManagerID FROM bankbranch WHERE isValid = 1");
+                resultSet = statement.executeQuery("SELECT BranchID, Lo_state, Lo_details, ManagerID, COUNT(BranchID) FROM bankbranch INNER JOIN administrator ON bankbranch.BranchID = administrator.AdBranchID WHERE ManagerID is NOT NULL GROUP BY BranchID ORDER BY BranchID");
                 while (resultSet.next()) {
                     String address = resultSet.getString(2) + " " + resultSet.getString(3);
                     System.out.print(String.format("%04d", resultSet.getInt(1)) + "     ");
                     System.out.printf("%-24s ", address);
-                    System.out.println(String.format("%08d", resultSet.getInt(4)));                }
+                    System.out.println(String.format("%08d", resultSet.getInt(4)) + "  " + resultSet.getInt(5));
+                }
             } else {
-                findBranchByID(inputBranchID);
+                resultSet = statement.executeQuery("SELECT BranchID, Lo_state, Lo_details, ManagerID, COUNT(BranchID) FROM bankbranch INNER JOIN administrator ON bankbranch.BranchID = administrator.AdBranchID WHERE ManagerID is NOT NULL AND BranchID = " + inputBranchID + " GROUP BY BranchID ORDER BY BranchID");
                 if (resultSet.next()) {
                     String address = resultSet.getString(2) + " " + resultSet.getString(3);
                     System.out.print(String.format("%04d", resultSet.getInt(1)) + "     ");
                     System.out.printf("%-24s ", address);
-                    System.out.println(String.format("%08d", resultSet.getInt(4)));
+                    System.out.println(String.format("%08d", resultSet.getInt(4)) + "  " + resultSet.getInt(5));
                 } else {
                     System.out.println(" Branch가 존재하지 않습니다.");
                 }
@@ -197,12 +199,12 @@ public class Main {
     public static void showAllBranchesForDBManager() {
         System.out.println("BranchID Location                 ManagerID isValid");
         try {
-            resultSet = statement.executeQuery("SELECT * FROM bankbranch");
+            resultSet = statement.executeQuery("SELECT BranchID, Lo_state, Lo_details, ManagerID FROM bankbranch ORDER BY BranchID");
             while (resultSet.next()) {
                 String address = resultSet.getString(2) + " " + resultSet.getString(3);
                 System.out.print(String.format("%04d", resultSet.getInt(1)) + "     ");
                 System.out.printf("%-24s ", address);
-                System.out.println(String.format("%08d", resultSet.getInt(4)) + "  " + resultSet.getInt(5));
+                System.out.println(String.format("%08d", resultSet.getInt(4)) + "  " + (resultSet.getInt(4) != 0));
             }
         } catch (SQLException throwables) {
             System.out.println("DB 에러 발생");
@@ -973,7 +975,7 @@ public class Main {
                         }
                     }
                     try {
-                        preparedStatement = connection.prepareStatement("INSERT INTO bankBranch(BranchID, Lo_State, Lo_details, ManagerID, isValid) values (?,?,?,?, 1)");
+                        preparedStatement = connection.prepareStatement("INSERT INTO bankBranch(BranchID, Lo_State, Lo_details, ManagerID) values (?,?,?,?)");
                         preparedStatement.setInt(1, inputBankBranchID);
                         preparedStatement.setString(2, inputLo_state);
                         preparedStatement.setString(3, inputLo_details);
@@ -1293,7 +1295,7 @@ public class Main {
                         if(inputOption3 == 1) {
                             System.out.println("\n < Bank Branch 삭제 >");
 
-                            resultSet = statement.executeQuery("SELECT COUNT(*) FROM bankbranch WHERE isValid = 1");
+                            resultSet = statement.executeQuery("SELECT COUNT(*) FROM bankbranch WHERE ManagerID is NOT NULL");
                             if (resultSet.next()) {
                                 if (resultSet.getInt(1) <= 1) {
                                     System.out.println(" Bank Branch 삭제 실패: 최소 하나 이상의 Bank Branch가 존재해야 합니다. 이전 메뉴 선택 창으로 돌아갑니다.");
@@ -1313,10 +1315,10 @@ public class Main {
                             int inputDeleteBankBranchID = keyboard.nextInt();
                             findBranchByID(inputDeleteBankBranchID);
 
-                            if (resultSet.next() && resultSet.getInt(5) != 0) {
+                            if (resultSet.next() && resultSet.getInt(4) != 0) {
                                 try {
                                     statement.executeUpdate("DELETE FROM administrator WHERE AdBranchID = " + inputDeleteBankBranchID);
-                                    statement.executeUpdate("UPDATE bankbranch SET ManagerID = NULL, isValid = 0 WHERE BranchID = " + inputDeleteBankBranchID);
+                                    statement.executeUpdate("UPDATE bankbranch SET ManagerID = NULL WHERE BranchID = " + inputDeleteBankBranchID);
                                     System.out.println("  ID: " + String.format("%04d", inputDeleteBankBranchID) + "의 Bank Branch가 비활성화 되었습니다.");
 
                                     System.out.println("\n <현재 Bank Branch 재선택>");
@@ -1328,7 +1330,7 @@ public class Main {
 
                                     findBranchByID(currentBranchID);
                                     while (!resultSet.next()) {
-                                        System.out.print("유효하지 않은 BranchID입니다. 다시 입력해주세요(4자리 수): ");
+                                        System.out.print("  유효하지 않은 BranchID입니다. 다시 입력해주세요(4자리 수): ");
                                         currentBranchID = keyboard.nextInt();
                                         findBranchByID(currentBranchID);
                                     }
@@ -1347,7 +1349,7 @@ public class Main {
                             int inputUpdateBranchID = keyboard.nextInt();
                             resultSet = statement.executeQuery("SELECT * FROM bankbranch WHERE BranchID = " + inputUpdateBranchID);
 
-                            if (resultSet.next() && resultSet.getInt(5) != 1) {
+                            if (resultSet.next() && resultSet.getInt(4) == 0) {
                                 try {
                                     System.out.print("  새로운 Manager ID를 입력: ");
                                     int inputNewManagerID = keyboard.nextInt();
@@ -1367,7 +1369,7 @@ public class Main {
                                     }
                                     if(flag) break;
 
-                                    statement.executeUpdate("UPDATE bankbranch SET ManagerID = " + inputNewManagerID + ", isValid = 1 WHERE BranchID = " + inputUpdateBranchID);
+                                    statement.executeUpdate("UPDATE bankbranch SET ManagerID = " + inputNewManagerID + " WHERE BranchID = " + inputUpdateBranchID);
                                     statement.executeUpdate("UPDATE administrator SET AdBranchID = " + inputUpdateBranchID + " WHERE AdminID = " + inputNewManagerID);
                                     System.out.println("  ID: " + String.format("%04d", inputUpdateBranchID) + "의 Bank Branch가 재활성화 되었습니다.");
                                 } catch (SQLException e) {
@@ -1784,6 +1786,14 @@ public class Main {
 
                     System.out.print("\n 거래 내역을 검색할 Account ID(000-0000-0000) 입력: ");
                     String inputAccountID = keyboard.next();
+
+                    findAccountByAccountID(inputAccountID);
+
+                    if (!resultSet.next() || resultSet.getInt(5) != currentUserID) {
+                        System.out.println("  고객님의 계좌 중에서는 해당 Account가 존재하지 않습니다.");
+                        break;
+                    }
+
                     findTransactionByAccountID(inputAccountID);
 
                     if (resultSet.next()) { //account 존재
@@ -1796,15 +1806,15 @@ public class Main {
                         } while (resultSet.next());
 
                     } else {
-                        System.out.println("Account 혹은 거래 내역이 존재하지 않습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                        System.out.println("  거래 내역이 존재하지 않습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
                     }
                     break;
                 default:
-                    System.out.println("유효하지 않은 입력입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                    System.out.println("  유효하지 않은 입력입니다. 이전 메뉴 선택 창으로 돌아갑니다.");
                     break;
             }
         } catch (SQLException e) {
-            System.out.println("DB Error: 이전 이전 메뉴 선택 창으로 돌아갑니다.");
+            System.out.println("  DB Error: 이전 이전 메뉴 선택 창으로 돌아갑니다.");
         }
     }
 
