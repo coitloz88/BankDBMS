@@ -829,32 +829,8 @@ public class Main {
 
                     try {
                         System.out.println();
-                        if(!showAccountsByUserID(inputUserID)) break;
+                        //if(!showAccountsByUserID(inputUserID)) break;
 
-                    /*
-                        유저가 가진 AccountID를 모두 찾아서
-                            AccountID: ~~~
-                            (기록 출력)
-
-                            AccountID: ~~~
-                            (기록 출력)
-                        근데 생각해보니까 이렇게 하면 resultSet이 중간중간에 바뀌네..
-                         */
-                    /*
-                    resultSet = statement.executeQuery("SELECT acTimeStamp, acType, amount, TBranchID, TAccountID FROM actransaction WHERE TAccountID = (SELECT AccountID FROM account WHERE AcUserID = "+ inputUserID + ") GROUP BY TAccountID ORDER BY acTimeStamp");
-
-                    if(resultSet.next()){
-                        String currentAccountID = resultSet.getString(5);
-                        System.out.println("AccountID: " + currentAccountID);
-                        System.out.println("TimeStamp           Type Amount      BranchID");
-                        do{
-                            String type = resultSet.getInt(2) == 1 ? "입금" : "출금";
-                            System.out.print(resultSet.getDate(1) + " " + type);
-                            System.out.printf("  %-10d", resultSet.getInt(3));
-                            System.out.println(String.format("%08d", resultSet.getInt(4)));
-                        }while (resultSet.next() && resultSet.getString(5).equals(currentAccountID));
-                    }
-                    */
                     /*    resultSet = statement.executeQuery("SELECT acTimeStamp, acType, amount, TBranchID, TAccountID FROM actransaction WHERE TAccountID = (SELECT AccountID FROM account WHERE AcUserID = " + inputUserID + ") GROUP BY TAccountID ORDER BY acTimeStamp");
 
                         for (String currentAccountID = ""; resultSet.next(); ) {
@@ -869,18 +845,54 @@ public class Main {
                             System.out.printf("  %-10d", resultSet.getInt(3));
                             System.out.println(String.format("%08d", resultSet.getInt(4)));
                         }*/
+
+                        resultSet = statement.executeQuery("SELECT acTimeStamp, acType, amount, TBranchID, TAccountID FROM actransaction, account WHERE TAccountID = AccountID AND AcUserID = " + inputUserID + " ORDER BY TAccountID, acTimeStamp");
+
+                        if (resultSet.next()) { //account 존재
+                            String currentAccountID = resultSet.getString(5);
+                            System.out.println("Account ID: " + currentAccountID);
+                            System.out.println("--------------------------------------------------------");
+                            System.out.println("TimeStamp               Type Amount            BranchID");
+                            System.out.println("--------------------------------------------------------");
+
+                            do {
+                                String loopTmpAccountID = resultSet.getString(5);
+
+                                if(!loopTmpAccountID.equals(currentAccountID)){
+                                    currentAccountID = new String(loopTmpAccountID);
+                                    System.out.println("\nAccount ID: " + currentAccountID);
+                                    System.out.println("--------------------------------------------------------");
+                                    System.out.println("TimeStamp               Type Amount            BranchID");
+                                    System.out.println("--------------------------------------------------------");
+                                }
+
+                                String type = resultSet.getInt(2) == 1 ? "입금" : "출금";
+                                System.out.print(resultSet.getTimestamp(1) + "   " + type);
+                                System.out.printf("  %-18d", resultSet.getInt(3));
+                                System.out.println(String.format("%04d", resultSet.getInt(4)));
+                            } while (resultSet.next());
+
+                        } else {
+                            System.out.println("  해당하는 정보가 존재하지 않습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                        }
+
                     } catch (SQLException e) {
-                        System.out.println("해당 User 혹은 User의 Account 및 기록이 존재하지 않습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
+                        //TODO: Delete this
+//                        e.printStackTrace();
+                        System.out.println("  해당 User 혹은 User의 Account 및 기록이 존재하지 않습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
                         break;
                     }
-//                    break;
+                    break;
                 case 1: //단일 Account의 거래 내역 검색
                     System.out.print("\n 거래 내역을 검색할 Account ID(000-0000-0000) 입력: ");
                     String inputAccountID = keyboard.next();
                     findTransactionByAccountID(inputAccountID);
 
                     if (resultSet.next()) { //account 존재
+                        System.out.println("--------------------------------------------------------");
                         System.out.println("TimeStamp               Type Amount            BranchID");
+                        System.out.println("--------------------------------------------------------");
+
                         do {
                             String type = resultSet.getInt(2) == 1 ? "입금" : "출금";
                             System.out.print(resultSet.getTimestamp(1) + "   " + type);
@@ -1797,7 +1809,10 @@ public class Main {
                     findTransactionByAccountID(inputAccountID);
 
                     if (resultSet.next()) { //account 존재
+
+                        System.out.println("--------------------------------------------------------");
                         System.out.println("TimeStamp               Type Amount            BranchID");
+                        System.out.println("--------------------------------------------------------");
                         do {
                             String type = resultSet.getInt(2) == 1 ? "입금" : "출금";
                             System.out.print(resultSet.getTimestamp(1) + "   " + type);
