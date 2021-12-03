@@ -37,6 +37,7 @@ public class Main {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
 
+
             String DB_URL = "jdbc:mysql://localhost:3306/bankApp?serverTimezone=Asia/Seoul&useSSL=false";
 
             //TODO: id, pw 로그인해서 db에 접속
@@ -1152,7 +1153,6 @@ public class Main {
         }
     }
 
-    //TODO: 여기!
     public static void DBManagerMode() {
         try {
             int currentDBManagerID = -1;
@@ -1211,7 +1211,7 @@ public class Main {
 
                             System.out.print("\n  2. 삭제할 기록의 TimeStamp를 입력해주세요(0000-00-00 00:00:00): ");
 
-                            keyboard.nextLine(); //TODO: 엔터 확인
+                            keyboard.nextLine();
                             String inputTimeStamp = keyboard.nextLine();
 
                             try {
@@ -1285,7 +1285,7 @@ public class Main {
 
                             System.out.print("\n  2. 수정할 기록의 TimeStamp를 입력(0000-00-00 00:00:00): ");
 
-                            keyboard.nextLine(); //TODO: 엔터 확인
+                            keyboard.nextLine();
                             String inputTimeStamp = keyboard.nextLine();
 
                             try {
@@ -1707,6 +1707,7 @@ public class Main {
                     break;
                 case 6:
                     userUpdateAccount();
+                    break;
                 default:
                     System.out.println("잘못된 입력입니다.");
                     break;
@@ -1961,7 +1962,7 @@ public class Main {
 
                 }
             } else { //아직 개설된 account가 하나도 없는 경우
-                newAccountID = "000-0000-0000";
+                newAccountID = "000-0000-0001";
             }
 
             //계좌 생성 SQL 실행
@@ -2062,7 +2063,7 @@ public class Main {
                         System.out.print("\n  Minus 여부를 변경할 계좌 번호를 입력해주세요(000-0000-0000):");
                         String inputAcocuntID = keyboard.next();
 
-                        preparedStatement = connection.prepareStatement("SELECT AccountID, Balance, Password, isMinus FROM account WHERE AccountID = ?, AcUserID = ?");
+                        preparedStatement = connection.prepareStatement("SELECT AccountID, Balance, Password, isMinus FROM account WHERE AccountID = ? AND AcUserID = ?");
                         preparedStatement.setString(1, inputAcocuntID);
                         preparedStatement.setInt(2, currentUserID);
                         resultSet = preparedStatement.executeQuery();
@@ -2101,10 +2102,10 @@ public class Main {
                     if (resultSet.next()) {
                         System.out.println("\n  현재 소유하고 계신 계좌는 다음과 같습니다.");
                         showAccountsByUserID(currentUserID);
-                        System.out.print("\n  Password를 변경할 계좌 번호를 입력해주세요(000-0000-0000):");
+                        System.out.print("\n  Password를 변경할 계좌 번호를 입력해주세요(000-0000-0000): ");
                         String inputAcocuntID = keyboard.next();
 
-                        preparedStatement = connection.prepareStatement("SELECT Password FROM account WHERE AccountID = ?, AcUserID = ?");
+                        preparedStatement = connection.prepareStatement("SELECT Password FROM account WHERE AccountID = ? AND AcUserID = ?");
                         preparedStatement.setString(1, inputAcocuntID);
                         preparedStatement.setInt(2, currentUserID);
                         resultSet = preparedStatement.executeQuery();
