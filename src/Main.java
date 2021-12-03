@@ -38,7 +38,7 @@ public class Main {
             Class.forName("com.mysql.cj.jdbc.Driver");
 
             String DB_URL = "jdbc:mysql://localhost:3306/bankApp?serverTimezone=Asia/Seoul&useSSL=false";
-/*
+
             //TODO: id, pw 로그인해서 db에 접속
             System.out.print("Enter ID: ");
             String DB_ID = keyboard.next();
@@ -46,8 +46,7 @@ public class Main {
             System.out.print("Enter PW: ");
             String DB_PW = keyboard.next();
 
-            connection = DriverManager.getConnection(DB_URL, DB_ID, DB_PW);*/
-            connection = DriverManager.getConnection(DB_URL, "root", "tksxhflsl12#");
+            connection = DriverManager.getConnection(DB_URL, DB_ID, DB_PW);
 
             if (connection == null) {
                 System.err.println(". . . DB 접속 실패");
@@ -58,7 +57,7 @@ public class Main {
             System.err.println("driver loading 실패");
             return;
         } catch (SQLException throwables) {
-            System.err.println(". . . DB 접속 실패");
+            System.err.println(". . . DB 접속 실패(SQL Exception)");
             return;
         } catch (Exception e) {
             System.err.println(". . . DB 접속 실패");
@@ -117,8 +116,10 @@ public class Main {
             if (statement != null) statement.close();
             if (!connection.isClosed()) connection.close();
         } catch (SQLException throwables) {
-            System.out.println("DB 오류 발생: 프로그램 강제 종료");
-            throwables.printStackTrace();
+            System.err.println("DB 오류 발생: 프로그램 강제 종료");
+//            throwables.printStackTrace();
+        } catch (Exception e) {
+            System.err.println("Invalid Input: DB Error");
         }
 
         keyboard.close();
