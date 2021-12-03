@@ -39,7 +39,7 @@ public class Main {
 
             String DB_URL = "jdbc:mysql://localhost:3306/bankApp?serverTimezone=Asia/Seoul&useSSL=false";
 
-/*            //TODO: id, pw 로그인해서 db에 접속
+            //TODO: id, pw 로그인해서 db에 접속
             System.out.print("Enter ID: ");
             String DB_ID = keyboard.next();
 
@@ -48,8 +48,8 @@ public class Main {
 
             connection = DriverManager.getConnection(DB_URL, DB_ID, DB_PW);
 
- */
-            connection = DriverManager.getConnection(DB_URL, "root", "tksxhflsl12#");
+
+            //connection = DriverManager.getConnection(DB_URL, "root", "tksxhflsl12#");
             if (connection == null) {
                 System.err.println(". . . DB 접속 실패");
                 return;
@@ -98,6 +98,8 @@ public class Main {
                     adminMainMenu();
                 } else if (selectInput == 2) {
                     userMainMenu();
+                } else if (selectInput == 3) {
+                    DBManagerMode();
                 } else if (selectInput == 0) {
                     break;
                 } else {
@@ -126,6 +128,7 @@ public class Main {
         System.out.println(" 0. Exit");
         System.out.println(" 1. Administrator mode");
         System.out.println(" 2. User mode");
+        System.out.println(" 3. DB Manager mode");
         System.out.println("------------------------------------");
         System.out.print(" Input: ");
 
@@ -284,7 +287,6 @@ public class Main {
             System.out.println(" 3. 계좌 정보 조회");
             System.out.println(" 4. 입출금 내역 조회");
             System.out.println(" 5. 은행 관리");
-            System.out.println(" 6. DB 관리");
             System.out.println("------------------------------------");
             System.out.print(" Input: ");
 
@@ -309,11 +311,8 @@ public class Main {
                 case 5:
                     adminManageBank();
                     break;
-                case 6:
-                    DBManagerMode();
-                    break;
                 default:
-                    System.out.println("잘못된 입력입니다.2");
+                    System.out.println("잘못된 입력입니다.");
                     break;
             }
         }
@@ -877,7 +876,6 @@ public class Main {
                         }
 
                     } catch (SQLException e) {
-                        //TODO: Delete this
 //                        e.printStackTrace();
                         System.out.println("  해당 User 혹은 User의 Account 및 기록이 존재하지 않습니다. 이전 메뉴 선택 창으로 돌아갑니다.");
                         break;
@@ -1130,7 +1128,7 @@ public class Main {
                     case 0:
                         return;
                     case 1:
-                        System.out.println("\n <Account Transaction 삭제하기>"); //TODO: 마이너스 통장
+                        System.out.println("\n <Account Transaction 삭제하기>");
                         System.out.println("  Account ID로 계좌 입출금 내역을 조회한 뒤, 원하는 기록을 삭제할 수 있습니다.");
                         System.out.print("  1. 입출금 내역을 검색할 계좌의 AccountID(000-0000-0000) 입력: ");
                         String inputAccountID = keyboard.next();
@@ -1204,7 +1202,7 @@ public class Main {
                         break;
 
                     case 2:
-                        System.out.println("\n <Account Transaction 수정하기>"); //TODO: 마이너스 통장
+                        System.out.println("\n <Account Transaction 수정하기>");
                         System.out.println("  Account ID로 계좌 입출금 내역을 조회한 뒤, 원하는 기록을 수정할 수 있습니다.");
                         System.out.print("  1. 입출금 내역을 검색할 계좌의 AccountID(000-0000-0000) 입력: ");
                         inputAccountID = keyboard.next();
@@ -1792,7 +1790,7 @@ public class Main {
                     System.out.println();
                     showAccountsByUserID(currentUserID);
                     break;
-                case 2: //TODO.. 입출금 기록 확인
+                case 2:
                     System.out.println();
                     if(!showAccountsByUserID(currentUserID)) break;
 
