@@ -1101,12 +1101,17 @@ public class Main {
 
 
                     if (resultSet.next()) {
-                        System.out.print("  1. 주소(특별시/광역시/도) 입력: ");
-                        inputLo_state = keyboard.next();
+                        if(inputBankBranchID != 0) {
+                            System.out.print("  1. 주소(특별시/광역시/도) 입력: ");
+                            inputLo_state = keyboard.next();
 
-                        System.out.print("  2. 주소(나머지 주소) 입력: ");
-                        inputLo_details = keyboard.next();
+                            System.out.print("  2. 주소(나머지 주소) 입력: ");
+                            inputLo_details = keyboard.next();
 
+                        } else {
+                            System.out.println("  해당 Bank Branch의 주소는 변경할 수 없습니다. (online 은행) 다음 정보를 기입해주세요.");
+                            inputLo_state = "online"; inputLo_details = "-";
+                        }
                         while (true) {
                             System.out.print("  3. Manager ID(8자리 수) 입력: ");
                             inputManagerID = keyboard.nextInt();
@@ -1978,7 +1983,7 @@ public class Main {
             System.out.println(" 고객님의 Account가 새롭게 개설 되었습니다. 계좌 번호: " + newAccountID);
 
         } catch (SQLException e) {
-            System.out.println("DB Error: 이전 이전 메뉴 선택 창으로 돌아갑니다.");
+            System.out.println("DB Error: 이전 메뉴 선택 창으로 돌아갑니다.");
         }
     }
 
@@ -2000,9 +2005,6 @@ public class Main {
 
                 System.out.print("\n  삭제할 Account ID(000-0000-0000) 입력: ");
                 String inputDeleteAccountID = keyboard.next();
-
-                //TODO: 삭제시 비번 입력
-
 
                 preparedStatement = connection.prepareStatement("SELECT AccountID, Password FROM account WHERE AcUserID = " + currentUserID + " AND AccountID = ?");
                 preparedStatement.setString(1, inputDeleteAccountID);
